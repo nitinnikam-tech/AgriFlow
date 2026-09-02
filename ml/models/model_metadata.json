@@ -1,0 +1,19 @@
+{
+  "model_type": "RandomForestRegressor",
+  "r2_score": 0.9774,
+  "mae_minutes": 4.27,
+  "feature_names": [
+    "queue_length",
+    "active_counters",
+    "avg_proc_time",
+    "hour_of_day",
+    "day_of_week",
+    "crop_type_COTTON",
+    "crop_type_MAIZE",
+    "crop_type_PADDY",
+    "crop_type_SOYBEAN",
+    "crop_type_WHEAT"
+  ],
+  "n_estimators": 100,
+  "dataset_size": 5000
+}
