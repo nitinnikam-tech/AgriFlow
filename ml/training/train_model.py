@@ -1,0 +1,97 @@
+﻿import os
+import json
+import numpy as np
+import pandas as pd
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import r2_score, mean_absolute_error
+import joblib
+
+def generate_synthetic_data(n_samples=5000):
+    np.random.seed(42)
+    
+    # Features
+    queue_lengths = np.random.randint(1, 60, size=n_samples)
+    active_counters = np.random.choice([2, 3, 4, 5, 6], size=n_samples, p=[0.1, 0.25, 0.45, 0.15, 0.05])
+    avg_proc_times = np.random.uniform(4.5, 7.5, size=n_samples)
+    crops = np.random.choice(['WHEAT', 'PADDY', 'SOYBEAN', 'COTTON', 'CHANA', 'MAIZE'], size=n_samples)
+    hours = np.random.randint(8, 17, size=n_samples) # 8 AM to 5 PM
+    days = np.random.randint(0, 6, size=n_samples) # Mon to Sat
+    
+    crop_multipliers = {
+        'WHEAT': 1.0,
+        'PADDY': 1.12,
+        'SOYBEAN': 0.95,
+        'COTTON': 1.28,
+        'CHANA': 0.92,
+        'MAIZE': 0.98
+    }
+    
+    # Calculate synthetic ground truth target: waiting duration in minutes
+    waiting_minutes = []
+    for q, c, t, cr, hr in zip(queue_lengths, active_counters, avg_proc_times, crops, hours):
+        base_wait = (q * t) / max(1, c)
+        crop_factor = crop_multipliers.get(cr, 1.0)
+        rush_factor = 1.18 if (10 <= hr <= 12) else 1.05 if (13 <= hr <= 14) else 0.95
+        noise = np.random.normal(0, 1.5)
+        
+        final_wait = max(2.0, (base_wait * crop_factor * rush_factor) + noise)
+        waiting_minutes.append(round(final_wait, 1))
+        
+    df = pd.DataFrame({
+        'queue_length': queue_lengths,
+        'active_counters': active_counters,
+        'avg_proc_time': np.round(avg_proc_times, 2),
+        'crop_type': crops,
+        'hour_of_day': hours,
+        'day_of_week': days,
+        'waiting_minutes': waiting_minutes
+    })
+    
+    return df
+
+def train_and_save():
+    print("🌾 Generating 5,000 synthetic mandi procurement data points...")
+    df = generate_synthetic_data(5000)
+    
+    os.makedirs('data', exist_ok=True)
+    os.makedirs('models', exist_ok=True)
+    df.to_csv('data/synthetic_procurement_history.csv', index=False)
+    
+    # One-hot encode crop_type
+    df_encoded = pd.get_dummies(df, columns=['crop_type'], drop_first=True)
+    
+    X = df_encoded.drop(columns=['waiting_minutes'])
+    y = df_encoded['waiting_minutes']
+    
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    
+    print("🤖 Training Random Forest Regressor on features...")
+    model = RandomForestRegressor(n_estimators=100, max_depth=12, random_state=42)
+    model.fit(X_train, y_train)
+    
+    preds = model.predict(X_test)
+    r2 = r2_score(y_test, preds)
+    mae = mean_absolute_error(y_test, preds)
+    
+    print(f"✅ Model Performance: R2 Score = {r2:.4f} | MAE = {mae:.2f} minutes")
+    
+    # Save model and metadata
+    joblib.dump(model, 'models/trained_model.joblib')
+    
+    metadata = {
+        'model_type': 'RandomForestRegressor',
+        'r2_score': round(float(r2), 4),
+        'mae_minutes': round(float(mae), 2),
+        'feature_names': list(X.columns),
+        'n_estimators': 100,
+        'dataset_size': len(df)
+    }
+    
+    with open('models/model_metadata.json', 'w') as f:
+        json.dump(metadata, f, indent=2)
+        
+    print("🎉 Model and metadata successfully saved to ml/models/")
+
+if __name__ == '__main__':
+    train_and_save()

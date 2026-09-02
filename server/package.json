@@ -1,0 +1,24 @@
+{
+  "name": "agriflow-server",
+  "version": "1.0.0",
+  "description": "AgriFlow Smart Procurement Queue & Status Tracking Platform Backend - SIH 2026",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node test/api.test.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.13.0",
+    "morgan": "^1.10.1",
+    "qrcode": "^1.5.4",
+    "socket.io": "^4.8.1",
+    "uuid": "^11.1.0"
+  }
+}
