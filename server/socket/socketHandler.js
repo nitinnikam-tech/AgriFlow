@@ -75,8 +75,15 @@ export function setupSocketHandlers(io) {
     socket.on('counter:toggle', ({ counterId, centreId = 'PC-PUNE-01' }) => {
       const counter = dualModeStore.counters.get(counterId);
       if (counter) {
-        counter.status = counter.status === 'PAUSED' ? 'PROCESSING' : 'PAUSED';
-        broadcastCentreAndFarmerUpdates(io, centreId, null, `Counter ${counter.counterNumber} ${counter.status.toLowerCase()}`);
+        if (counter.status === 'PROCESSING') {
+          counter.status = 'PAUSED';
+          broadcastCentreAndFarmerUpdates(io, centreId, null, `Counter ${counter.counterNumber} paused`);
+        } else if (counter.status === 'PAUSED') {
+          counter.status = 'PROCESSING';
+          broadcastCentreAndFarmerUpdates(io, centreId, null, `Counter ${counter.counterNumber} resumed processing`);
+        } else {
+          socket.emit('toast:error', { message: `Cannot pause/resume counter in ${counter.status} state` });
+        }
       }
     });
 

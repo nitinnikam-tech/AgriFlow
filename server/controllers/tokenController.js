@@ -29,8 +29,23 @@ export const tokenController = {
     const centre = dualModeStore.getCentre(centreId);
     const farmer = dualModeStore.getFarmer(farmerId) || { name: 'Ramesh Patil', phone: '9876543210' };
 
-    const count = dualModeStore.tokens.size + 1;
-    const tokenNumber = `A-${count}`;
+    // Extract highest number from existing A-### tokens to prevent collisions
+    const existingIds = Array.from(dualModeStore.tokens.keys())
+        .filter(k => k.startsWith('A-'))
+        .map(k => parseInt(k.replace('A-', ''), 10))
+        .filter(n => !isNaN(n));
+    const maxId = existingIds.length > 0 ? Math.max(...existingIds) : 0;
+    let count = Math.max(dualModeStore.tokens.size + 1, maxId + 1);
+    let tokenNumber = `A-${count}`;
+    while (dualModeStore.tokens.has(tokenNumber)) {
+      count++;
+      tokenNumber = `A-${count}`;
+    }
+
+    const existingPositions = Array.from(dualModeStore.tokens.values())
+        .filter(t => t.centreId === centreId)
+        .map(t => t.queuePosition || 0);
+    const nextQueuePosition = (existingPositions.length > 0 ? Math.max(...existingPositions) : 0) + 1;
 
     const newToken = {
       id: `TOK-${Date.now()}`,
@@ -47,12 +62,12 @@ export const tokenController = {
       slotTimeWindow: slot.timeWindow,
       date: new Date().toISOString().split('T')[0],
       status: TOKEN_STATUS.WAITING,
-      queuePosition: 15,
-      peopleAhead: 18,
-      activeCounters: centre.activeCounters || 4,
-      avgProcessingTimeMin: centre.avgProcessingTimeMin || 5.8,
-      estimatedWaitMin: 32,
-      recommendedArrivalTime: '10:42 AM',
+      queuePosition: nextQueuePosition,
+      peopleAhead: 0, // Will be calculated by QueueIntelligenceService
+      activeCounters: centre ? (centre.activeCounters || 4) : 4,
+      avgProcessingTimeMin: centre ? (centre.avgProcessingTimeMin || 5.8) : 5.8,
+      estimatedWaitMin: 0, // Will be calculated
+      recommendedArrivalTime: 'N/A',
       predictedCongestion: CONGESTION_LEVELS.LOW,
       confidenceScore: 89,
       qrCodeData: JSON.stringify({
@@ -87,10 +102,13 @@ export const tokenController = {
 
     dualModeStore.tokens.set(tokenNumber, newToken);
 
+    // Calculate dynamic ETA and peopleAhead
+    QueueIntelligenceService.calculateFarmerETA(tokenNumber, centreId);
+
     return res.status(201).json({
       success: true,
       message: 'Smart Token generated successfully',
-      token: newToken
+      token: dualModeStore.getToken(tokenNumber)
     });
   },
 

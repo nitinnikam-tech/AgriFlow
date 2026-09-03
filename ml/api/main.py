@@ -1,4 +1,4 @@
-﻿from fastapi import FastAPI
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import os
@@ -63,15 +63,36 @@ def model_info():
 
 @app.post("/predict-eta")
 def predict_eta(req: ETAPredictionRequest):
-    # Rule-assisted regression calculation
-    crop_weight_map = {"WHEAT": 1.0, "PADDY": 1.12, "SOYBEAN": 0.95, "COTTON": 1.28, "CHANA": 0.92, "MAIZE": 0.98}
-    crop_multiplier = crop_weight_map.get(req.crop_type.upper(), 1.0)
-    
-    rush_penalty = 1.15 if (10 <= req.hour_of_day <= 12) else 1.0
-    effective_counters = max(1, req.active_counters)
-    
-    predicted_wait = round(((req.queue_length * req.avg_processing_time) / effective_counters) * crop_multiplier * rush_penalty)
-    predicted_wait = max(2, predicted_wait)
+    valid_crops = ["CHANA", "COTTON", "MAIZE", "PADDY", "SOYBEAN", "WHEAT"]
+    crop = req.crop_type.upper()
+    if crop not in valid_crops:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail=f"Invalid crop_type. Must be one of {valid_crops}")
+
+    if model:
+        features = [
+            float(req.queue_length),
+            float(req.active_counters),
+            float(req.avg_processing_time),
+            float(req.hour_of_day),
+            float(req.day_of_week),
+            1.0 if crop == "COTTON" else 0.0,
+            1.0 if crop == "MAIZE" else 0.0,
+            1.0 if crop == "PADDY" else 0.0,
+            1.0 if crop == "SOYBEAN" else 0.0,
+            1.0 if crop == "WHEAT" else 0.0
+        ]
+        feature_array = np.array([features])
+        pred = model.predict(feature_array)[0]
+        predicted_wait = max(2, round(float(pred)))
+    else:
+        # Graceful fallback if model failed to load
+        crop_weight_map = {"WHEAT": 1.0, "PADDY": 1.12, "SOYBEAN": 0.95, "COTTON": 1.28, "CHANA": 0.92, "MAIZE": 0.98}
+        crop_multiplier = crop_weight_map.get(crop, 1.0)
+        rush_penalty = 1.15 if (10 <= req.hour_of_day <= 12) else 1.0
+        effective_counters = max(1, req.active_counters)
+        predicted_wait = round(((req.queue_length * req.avg_processing_time) / effective_counters) * crop_multiplier * rush_penalty)
+        predicted_wait = max(2, predicted_wait)
     
     crowd_forecast = "HIGH" if predicted_wait > 35 else "MEDIUM" if predicted_wait > 20 else "LOW"
     

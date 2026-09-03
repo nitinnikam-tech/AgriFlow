@@ -1,4 +1,4 @@
-﻿# AgriFlow Full-Stack Startup Script
+# AgriFlow Full-Stack Startup Script
 # ====================================
 # Starts Backend (Node.js), AI Microservice (Python FastAPI), and Frontend (Vite) concurrently.
 
@@ -36,8 +36,8 @@ Write-Host "[2/3] Starting Python AI/ML FastAPI Microservice (Port 8000)..." -Fo
 $mlJob = Start-Job -ScriptBlock {
     param($dir)
     Set-Location $dir
-    python -m uvicorn ml.api.main:app --host 127.0.0.1 --port 8000
-} -ArgumentList $rootDir
+    python -m uvicorn api.main:app --host 127.0.0.1 --port 8000
+} -ArgumentList $mlDir
 
 Start-Sleep -Seconds 2
 

@@ -156,7 +156,7 @@ export default function LiveQueueRadar() {
             <AlertCircle className="w-4 h-4" />
           </div>
           <p className="text-xs sm:text-sm text-slate-300">
-            <strong className="text-white font-semibold">AgriFlow Intelligence:</strong> 6 farmers are currently ahead. With 4 counters operating at 5.8m velocity, you do not need to wait in the mandi yard until <span className="text-amber-400 font-bold">{recommendedArrival}</span>.
+            <strong className="text-white font-semibold">AgriFlow Intelligence:</strong> {peopleAhead} farmer{peopleAhead === 1 ? ' is' : 's are'} currently ahead. With {activeCounters} counter{activeCounters === 1 ? '' : 's'} operating at {avgProcTime}m velocity, you do not need to wait in the mandi yard until <span className="text-amber-400 font-bold">{recommendedArrival}</span>.
           </p>
         </div>
         <div className="flex items-center space-x-2 shrink-0">
