@@ -6,7 +6,7 @@ import { Radio, Volume2, VolumeX, Sparkles, Shield, User, Activity, Layers } fro
 import { Link, useLocation } from 'react-router-dom';
 
 export default function Navbar() {
-  const { activeRole, switchRole } = useAuth();
+  const { activeRole, switchRole, logout } = useAuth();
   const { lang, setLang, t } = useLanguage();
   const { isConnected, audioEnabled, setAudioEnabled } = useQueue();
   const location = useLocation();
@@ -125,7 +125,7 @@ export default function Navbar() {
               <option value="hi">हिंदी (Hindi)</option>
               <option value="mr">मराठी (Marathi)</option>
             </select>
-
+            
             {/* WebSocket Live Status */}
             <div
               className={`flex items-center space-x-1 text-[11px] font-semibold px-2 py-1 rounded-full border ${
@@ -138,6 +138,14 @@ export default function Navbar() {
               <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-500 animate-ping' : 'bg-rose-500'}`} />
               <span className="hidden sm:inline">{isConnected ? 'LIVE' : 'OFFLINE'}</span>
             </div>
+
+            {/* Logout Button */}
+            <button
+              onClick={logout}
+              className="px-2 py-1.5 rounded-lg text-xs font-semibold bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 transition-colors"
+            >
+              Logout
+            </button>
           </div>
         </div>
       </div>

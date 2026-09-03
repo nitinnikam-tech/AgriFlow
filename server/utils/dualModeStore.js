@@ -292,7 +292,8 @@ class DualModeStore {
       email: 'officer@agriflow.gov.in',
       role: USER_ROLES.OFFICER,
       centreId: 'PC-PUNE-01',
-      counterId: 'CNT-PUN-01'
+      counterId: 'CNT-PUN-01',
+      passwordHash: '$2b$10$mJEwDN5PRXXZ2HUVRvv12.eEXvXrQnFsAuFnOR6MXa6jRAPifhZUK'
     });
 
     this.users.set('admin@agriflow.gov.in', {
@@ -300,7 +301,8 @@ class DualModeStore {
       name: 'Dr. Vivek Sharma (Director DoCA)',
       email: 'admin@agriflow.gov.in',
       role: USER_ROLES.CENTRE_ADMIN,
-      centreId: 'PC-PUNE-01'
+      centreId: 'PC-PUNE-01',
+      passwordHash: '$2b$10$mJEwDN5PRXXZ2HUVRvv12.eEXvXrQnFsAuFnOR6MXa6jRAPifhZUK'
     });
 
     this.users.set('district@agriflow.gov.in', {
@@ -308,7 +310,8 @@ class DualModeStore {
       name: 'Priyanka Patil (District Collector Officer)',
       email: 'district@agriflow.gov.in',
       role: USER_ROLES.DISTRICT_ADMIN,
-      district: 'Pune'
+      district: 'Pune',
+      passwordHash: '$2b$10$mJEwDN5PRXXZ2HUVRvv12.eEXvXrQnFsAuFnOR6MXa6jRAPifhZUK'
     });
 
     this.notifications.set('FMR-1002', [

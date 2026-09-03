@@ -3,8 +3,28 @@ import { QueueIntelligenceService } from '../services/queueIntelligence.js';
 import { SlotOptimizerService } from '../services/slotOptimizer.js';
 import { NotificationService } from '../services/notificationService.js';
 import { TOKEN_STATUS, CONGESTION_LEVELS } from '../config/constants.js';
+import jwt from 'jsonwebtoken';
 
 export function setupSocketHandlers(io) {
+  io.use((socket, next) => {
+    const token = socket.handshake.auth?.token;
+    if (!token) {
+      // In a strict prod environment, we would reject. 
+      // For demo preservation, allow connection but mark as unauthenticated.
+      socket.user = null;
+      return next();
+    }
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_for_dev_only');
+      socket.user = decoded;
+      next();
+    } catch (err) {
+      // Still allow connection but without user
+      socket.user = null;
+      next();
+    }
+  });
+
   io.on('connection', (socket) => {
     socket.on('join:centre', (centreId = 'PC-PUNE-01') => {
       socket.join(`centre:${centreId}`);

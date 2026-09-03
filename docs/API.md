@@ -1,11 +1,15 @@
-﻿# AgriFlow REST & WebSocket API Specification
+# AgriFlow REST & WebSocket API Specification
+
+## Authentication (JWT & RBAC)
+All protected endpoints require an `Authorization: Bearer <token>` header. Roles include `FARMER`, `OFFICER`, `CENTRE_ADMIN`, and `DISTRICT_ADMIN`.
 
 ## Base URL: `http://localhost:5000/api`
 
 ### 1. Authentication
 - `POST /auth/otp/send`: Generates simulated SMS OTP.
-- `POST /auth/otp/verify`: Validates OTP and returns farmer session token.
-- `POST /auth/official/login`: Role login for Officer / Admin / District Authority.
+- `POST /auth/otp/verify`: Validates OTP and returns farmer session token (JWT).
+- `POST /auth/official/login`: Role login for Officer / Admin / District Authority (Requires email/password, returns JWT).
+- `GET /auth/profile`: (Protected) Get authenticated user profile.
 
 ### 2. Centres & Telemetry
 - `GET /centres`: List all active procurement centres.

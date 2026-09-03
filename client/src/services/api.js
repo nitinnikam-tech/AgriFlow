@@ -1,80 +1,74 @@
 const API_BASE = '/api';
 
+const apiFetch = async (url, options = {}) => {
+  const token = localStorage.getItem('agriflow_jwt');
+  const headers = {
+    'Content-Type': 'application/json',
+    ...options.headers,
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(url, { ...options, headers });
+  
+  if (response.status === 401) {
+    localStorage.removeItem('agriflow_jwt');
+    window.location.href = '/login';
+    throw new Error('Session expired. Please login again.');
+  }
+
+  if (response.status === 403) {
+    throw new Error('Insufficient permissions to perform this action.');
+  }
+
+  return response.json();
+};
+
 export const api = {
   // Auth
-  sendOtp: (phone) => fetch(`${API_BASE}/auth/otp/send`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ phone })
-  }).then(r => r.json()),
-
-  verifyOtp: (phone, otp) => fetch(`${API_BASE}/auth/otp/verify`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ phone, otp })
-  }).then(r => r.json()),
+  sendOtp: (phone) => apiFetch(`${API_BASE}/auth/otp/send`, { method: 'POST', body: JSON.stringify({ phone }) }),
+  verifyOtp: (phone, otp) => apiFetch(`${API_BASE}/auth/otp/verify`, { method: 'POST', body: JSON.stringify({ phone, otp }) }),
+  officialLogin: (email, password, role) => apiFetch(`${API_BASE}/auth/official/login`, { method: 'POST', body: JSON.stringify({ email, password, role }) }),
 
   // Centres
-  getCentres: () => fetch(`${API_BASE}/centres`).then(r => r.json()),
-  getCentre: (id) => fetch(`${API_BASE}/centres/${id}`).then(r => r.json()),
-  getDigitalTwin: (id) => fetch(`${API_BASE}/centres/${id}/digital-twin`).then(r => r.json()),
-  getCrowdForecast: (id) => fetch(`${API_BASE}/centres/${id}/crowd-forecast`).then(r => r.json()),
+  getCentres: () => apiFetch(`${API_BASE}/centres`),
+  getCentre: (id) => apiFetch(`${API_BASE}/centres/${id}`),
+  getDigitalTwin: (id) => apiFetch(`${API_BASE}/centres/${id}/digital-twin`),
+  getCrowdForecast: (id) => apiFetch(`${API_BASE}/centres/${id}/crowd-forecast`),
 
   // Slots
-  getSlots: (centreId) => fetch(`${API_BASE}/slots?centreId=${centreId}`).then(r => r.json()),
-  getOptimizationProposal: (centreId) => fetch(`${API_BASE}/slots/optimization-proposal?centreId=${centreId}`).then(r => r.json()),
-  applyOptimization: (centreId) => fetch(`${API_BASE}/slots/apply-optimization`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ centreId })
-  }).then(r => r.json()),
+  getSlots: (centreId) => apiFetch(`${API_BASE}/slots?centreId=${centreId}`),
+  getOptimizationProposal: (centreId) => apiFetch(`${API_BASE}/slots/optimization-proposal?centreId=${centreId}`),
+  applyOptimization: (centreId) => apiFetch(`${API_BASE}/slots/apply-optimization`, { method: 'POST', body: JSON.stringify({ centreId }) }),
 
   // Tokens
-  getToken: (tokenNumber) => fetch(`${API_BASE}/tokens/${tokenNumber}`).then(r => r.json()),
-  bookToken: (tokenData) => fetch(`${API_BASE}/tokens/book`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(tokenData)
-  }).then(r => r.json()),
-  verifyQrCheckIn: (qrData) => fetch(`${API_BASE}/tokens/verify-qr`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ qrData })
-  }).then(r => r.json()),
+  getToken: (tokenNumber) => apiFetch(`${API_BASE}/tokens/${tokenNumber}`),
+  bookToken: (tokenData) => apiFetch(`${API_BASE}/tokens/book`, { method: 'POST', body: JSON.stringify(tokenData) }),
+  verifyQrCheckIn: (qrData) => apiFetch(`${API_BASE}/tokens/verify-qr`, { method: 'POST', body: JSON.stringify({ qrData }) }),
 
   // Queue
-  getLiveQueue: (centreId) => fetch(`${API_BASE}/queue/live?centreId=${centreId || 'PC-PUNE-01'}`).then(r => r.json()),
-  getFarmerETA: (tokenNumber, centreId) => fetch(`${API_BASE}/queue/eta/${tokenNumber}?centreId=${centreId || 'PC-PUNE-01'}`).then(r => r.json()),
+  getLiveQueue: (centreId) => apiFetch(`${API_BASE}/queue/live?centreId=${centreId || 'PC-PUNE-01'}`),
+  getFarmerETA: (tokenNumber, centreId) => apiFetch(`${API_BASE}/queue/eta/${tokenNumber}?centreId=${centreId || 'PC-PUNE-01'}`),
 
   // Official
-  getCounters: (centreId) => fetch(`${API_BASE}/official/counters?centreId=${centreId || 'PC-PUNE-01'}`).then(r => r.json()),
-  getWorkloadBalancing: (centreId) => fetch(`${API_BASE}/official/workload-balancing?centreId=${centreId || 'PC-PUNE-01'}`).then(r => r.json()),
+  getCounters: (centreId) => apiFetch(`${API_BASE}/official/counters?centreId=${centreId || 'PC-PUNE-01'}`),
+  getWorkloadBalancing: (centreId) => apiFetch(`${API_BASE}/official/workload-balancing?centreId=${centreId || 'PC-PUNE-01'}`),
 
   // Quality & Payment
-  submitQualityInspection: (data) => fetch(`${API_BASE}/quality/inspect`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
-  }).then(r => r.json()),
-  getPaymentStatus: (tokenNumber) => fetch(`${API_BASE}/payments/${tokenNumber}`).then(r => r.json()),
-  simulatePaymentCredit: (tokenNumber) => fetch(`${API_BASE}/payments/simulate-credit`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ tokenNumber })
-  }).then(r => r.json()),
+  submitQualityInspection: (data) => apiFetch(`${API_BASE}/quality/inspect`, { method: 'POST', body: JSON.stringify(data) }),
+  getPaymentStatus: (tokenNumber) => apiFetch(`${API_BASE}/payments/${tokenNumber}`),
+  simulatePaymentCredit: (tokenNumber) => apiFetch(`${API_BASE}/payments/simulate-credit`, { method: 'POST', body: JSON.stringify({ tokenNumber }) }),
 
   // Analytics
-  getAnalytics: (centreId) => fetch(`${API_BASE}/analytics/dashboard?centreId=${centreId || 'PC-PUNE-01'}`).then(r => r.json()),
+  getAnalytics: (centreId) => apiFetch(`${API_BASE}/analytics/dashboard?centreId=${centreId || 'PC-PUNE-01'}`),
 
   // Notifications
-  getFarmerNotifications: (farmerId) => fetch(`${API_BASE}/notifications/farmer/${farmerId || 'FMR-1002'}`).then(r => r.json()),
+  getFarmerNotifications: (farmerId) => apiFetch(`${API_BASE}/notifications/farmer/${farmerId || 'FMR-1002'}`),
 
   // Demo
-  getDemoState: () => fetch(`${API_BASE}/demo/state`).then(r => r.json()),
-  advanceDemoStep: (step) => fetch(`${API_BASE}/demo/advance`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ step })
-  }).then(r => r.json()),
-  resetDemo: () => fetch(`${API_BASE}/demo/reset`, { method: 'POST' }).then(r => r.json())
+  getDemoState: () => apiFetch(`${API_BASE}/demo/state`),
+  advanceDemoStep: (step) => apiFetch(`${API_BASE}/demo/advance`, { method: 'POST', body: JSON.stringify({ step }) }),
+  resetDemo: () => apiFetch(`${API_BASE}/demo/reset`, { method: 'POST' })
 };

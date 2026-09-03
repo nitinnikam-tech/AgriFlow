@@ -4,10 +4,12 @@ let socket = null;
 
 export function getSocket() {
   if (!socket) {
+    const token = localStorage.getItem('agriflow_jwt');
     socket = io(window.location.origin, {
       transports: ['websocket', 'polling'],
       reconnectionAttempts: 10,
-      reconnectionDelay: 1000
+      reconnectionDelay: 1000,
+      auth: { token }
     });
 
     socket.on('connect', () => {

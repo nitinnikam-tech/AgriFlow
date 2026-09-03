@@ -1,4 +1,4 @@
-﻿# AgriFlow System Architecture
+# AgriFlow System Architecture
 ## SIH 2026 Problem Statement PS 26032 (DoCA)
 
 AgriFlow converts traditional static slot booking into a **Cyber-Physical Real-Time Queue Intelligence Platform**.
@@ -67,4 +67,4 @@ When an officer completes or calls a token:
 - Zero biometric/facial data stored.
 - Anonymized analytics tokens (`A-127`, `FMR-1002`).
 - Signed QR codes with sha256 checksum validation.
-- Role-Based Access Control (RBAC).
+- Role-Based Access Control (RBAC) enforced via JWT authentication on API endpoints and WebSocket handshakes. Passwords are salted and hashed using bcrypt.

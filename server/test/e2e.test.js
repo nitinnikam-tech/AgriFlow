@@ -11,6 +11,7 @@ const BACKEND_URL = 'http://localhost:5000';
 
 let passed = 0;
 let failed = 0;
+let jwtToken = null;
 
 function pass(msg) {
   console.log(`\x1b[32m[PASS]\x1b[0m ${msg}`);
@@ -23,9 +24,34 @@ function fail(msg, err) {
   failed++;
 }
 
+const authFetch = async (url, options = {}) => {
+  const headers = { 'Content-Type': 'application/json', ...options.headers };
+  if (jwtToken) {
+    headers['Authorization'] = `Bearer ${jwtToken}`;
+  }
+  return fetch(url, { ...options, headers });
+};
+
 async function runE2ETests() {
   console.log('\n\x1b[36m  AgriFlow WebSocket End-to-End Test Suite\x1b[0m');
   console.log('\x1b[36m  SIH 2026 Hero Scenario Verification\x1b[0m\n');
+
+  // --- TEST 0: Authentication ---
+  try {
+    const loginRes = await fetch(`${BACKEND_URL}/api/auth/otp/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: '9876543210', otp: '123456' })
+    });
+    const loginData = await loginRes.json();
+    assert.ok(loginData.success, 'Login should succeed');
+    assert.ok(loginData.token, 'Should return JWT token');
+    jwtToken = loginData.token;
+    pass(`Authenticated as Farmer ${loginData.user.name}`);
+  } catch (e) {
+    fail('Authentication failed', e);
+    process.exit(1);
+  }
 
   // --- TEST 1: Backend Health ---
   try {
@@ -41,7 +67,7 @@ async function runE2ETests() {
 
   // --- TEST 2: Hero Token A-127 Baseline ---
   try {
-    const res = await fetch(`${BACKEND_URL}/api/tokens/A-127`);
+    const res = await authFetch(`${BACKEND_URL}/api/tokens/A-127`);
     const data = await res.json();
     assert.ok(data.token, 'Token A-127 should exist');
     assert.strictEqual(data.token.tokenNumber, 'A-127');
@@ -71,7 +97,11 @@ async function runE2ETests() {
 
   // --- TEST 4: Socket.IO WebSocket Connection ---
   const socketConnTest = await new Promise((resolve) => {
-    const socket = io(BACKEND_URL, { transports: ['websocket'], timeout: 5000 });
+    const socket = io(BACKEND_URL, { 
+      transports: ['websocket'], 
+      timeout: 5000,
+      auth: { token: jwtToken } 
+    });
     const tid = setTimeout(() => { socket.close(); resolve({ ok: false, error: 'Connection timeout' }); }, 5000);
     socket.on('connect', () => {
       clearTimeout(tid);
@@ -89,7 +119,11 @@ async function runE2ETests() {
 
   // --- TEST 5: Farmer joins room and receives eta:update ---
   const farmerRoomTest = await new Promise((resolve) => {
-    const socket = io(BACKEND_URL, { transports: ['websocket'], timeout: 5000 });
+    const socket = io(BACKEND_URL, { 
+      transports: ['websocket'], 
+      timeout: 5000,
+      auth: { token: jwtToken }
+    });
     const tid = setTimeout(() => { socket.close(); resolve({ ok: false, error: 'No eta:update within 5000ms' }); }, 5000);
     socket.on('connect', () => {
       socket.emit('join:farmer', { farmerId: 'FMR-1002', tokenNumber: 'A-127', centreId: 'PC-PUNE-01' });
@@ -110,7 +144,11 @@ async function runE2ETests() {
 
   // --- TEST 6: Officer joins centre room and receives queue:update ---
   const centreRoomTest = await new Promise((resolve) => {
-    const socket = io(BACKEND_URL, { transports: ['websocket'], timeout: 5000 });
+    const socket = io(BACKEND_URL, { 
+      transports: ['websocket'], 
+      timeout: 5000,
+      auth: { token: jwtToken }
+    });
     const tid = setTimeout(() => { socket.close(); resolve({ ok: false, error: 'No queue:update within 5000ms' }); }, 5000);
     socket.on('connect', () => {
       socket.emit('join:centre', 'PC-PUNE-01');

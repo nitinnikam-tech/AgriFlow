@@ -1,23 +1,17 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { Wheat, Shield, BarChart3, Phone, KeyRound, ChevronRight, Loader2, CheckCircle2 } from "lucide-react";
+import { api } from "../services/api";
+import { Wheat, Shield, BarChart3, Phone, KeyRound, ChevronRight, Loader2, CheckCircle2, User, Lock } from "lucide-react";
 
 const ROLES = [
   { id: "FARMER", label: "Farmer / Kisan", sub: "Smart slot booking & live queue tracking", icon: Wheat, phone: "9876543210" },
-  { id: "OFFICIAL", label: "Procurement Officer", sub: "Counter management & quality inspection", icon: Shield, phone: "9000000001" },
-  { id: "ADMIN", label: "Centre Admin", sub: "Digital twin & slot optimization", icon: Shield, phone: "9000000002" },
-  { id: "DISTRICT_ADMIN", label: "District Authority", sub: "Analytics, anomaly alerts & mandi oversight", icon: BarChart3, phone: "9000000003" },
+  { id: "OFFICER", label: "Procurement Officer", sub: "Counter management & quality inspection", icon: Shield, email: "officer@agriflow.gov.in" },
+  { id: "CENTRE_ADMIN", label: "Centre Admin", sub: "Digital twin & slot optimization", icon: Shield, email: "admin@agriflow.gov.in" },
+  { id: "DISTRICT_ADMIN", label: "District Authority", sub: "Analytics, anomaly alerts & mandi oversight", icon: BarChart3, email: "district@agriflow.gov.in" },
 ];
 
-const DEMO_DATA = {
-  FARMER: { id: "FMR-1002", name: "Ramesh Patil", village: "Shirur, Pune", token: "A-127" },
-  OFFICIAL: { id: "OFF-001", name: "Sanjay Kumar", centre: "Pune APMC", badge: "OFF-2134" },
-  ADMIN: { id: "ADM-001", name: "Priya Deshmukh", centre: "Pune APMC", badge: "ADM-0021" },
-  DISTRICT_ADMIN: { id: "DST-001", name: "Collector R. Sharma", district: "Pune", badge: "IAS-2019" },
-};
-
-const DEST = { FARMER: "/", OFFICIAL: "/officer", ADMIN: "/admin", DISTRICT_ADMIN: "/analytics" };
+const DEST = { FARMER: "/", OFFICER: "/officer", CENTRE_ADMIN: "/admin", DISTRICT_ADMIN: "/analytics" };
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -26,28 +20,74 @@ export default function LoginPage() {
   const [role, setRole] = useState(null);
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [err, setErr] = useState("");
 
-  const selectRole = (r) => { setRole(r); setPhone(r.phone); setStep("otp"); setErr(""); };
+  const selectRole = (r) => { 
+    setRole(r); 
+    setErr("");
+    if (r.id === "FARMER") {
+      setPhone(r.phone); 
+      setStep("otp"); 
+    } else {
+      setEmail(r.email);
+      setPassword("123456"); // Pre-filled for demo
+      setStep("password");
+    }
+  };
 
   const sendOtp = async () => {
     if (phone.length !== 10) { setErr("Enter a valid 10-digit mobile number"); return; }
     setLoading(true); setErr("");
-    await new Promise(r => setTimeout(r, 1000));
-    setSent(true); setLoading(false);
+    try {
+      await api.sendOtp(phone);
+      setSent(true); 
+    } catch (error) {
+      setErr("Failed to send OTP");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const verifyOtp = async () => {
     if (otp.length !== 6) { setErr("Enter the 6-digit OTP"); return; }
     setLoading(true); setErr("");
-    await new Promise(r => setTimeout(r, 900));
-    if (otp !== "123456") { setLoading(false); setErr("Invalid OTP. Use 123456 for SIH demo."); return; }
-    const userData = { ...DEMO_DATA[role.id], role: role.id, phone, loginAt: new Date().toISOString() };
-    login(userData);
-    setStep("success"); setLoading(false);
-    setTimeout(() => navigate(DEST[role.id]), 1400);
+    try {
+      const res = await api.verifyOtp(phone, otp);
+      if (res.success) {
+        login(res.user, res.token);
+        setStep("success");
+        setTimeout(() => navigate(DEST[role.id]), 1400);
+      } else {
+        setErr(res.error || "Invalid OTP");
+      }
+    } catch (error) {
+      setErr(error.message || "Invalid OTP");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loginOfficial = async () => {
+    if (!email || !password) { setErr("Email and password required"); return; }
+    setLoading(true); setErr("");
+    try {
+      const res = await api.officialLogin(email, password, role.id);
+      if (res.success) {
+        login(res.user, res.token);
+        setStep("success");
+        setTimeout(() => navigate(DEST[role.id]), 1400);
+      } else {
+        setErr(res.error || "Login failed");
+      }
+    } catch (error) {
+      setErr(error.message || "Invalid credentials");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -89,7 +129,7 @@ export default function LoginPage() {
                 );
               })}
             </div>
-            <p className="text-center text-white/25 text-xs mt-6">SIH 2026 Demo · PS 26032 · All data is simulated</p>
+            <p className="text-center text-white/25 text-xs mt-6">SIH 2026 Demo · PS 26032</p>
           </div>
         )}
 
@@ -139,6 +179,47 @@ export default function LoginPage() {
                   </button>
                 </>
               )}
+              {err && <p className="text-red-400 text-xs text-center">{err}</p>}
+            </div>
+          </div>
+        )}
+
+        {step === "password" && role && (
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
+            <button onClick={() => { setStep("role"); setErr(""); }}
+              className="text-white/30 hover:text-white text-sm mb-4 flex items-center gap-1 transition-colors">
+              ← Back
+            </button>
+            <h2 className="text-white font-semibold text-lg mb-1">Login as {role.label}</h2>
+            <p className="text-white/40 text-sm mb-5">Enter your official credentials</p>
+            <div className="space-y-4">
+              <div>
+                <label className="text-white/50 text-xs font-medium mb-1.5 block">Official Email</label>
+                <div className="flex gap-2">
+                  <div className="bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-white/50 text-sm flex items-center"><User className="w-4 h-4" /></div>
+                  <input type="email" value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm placeholder-white/20 focus:outline-none focus:border-agri-500/50"
+                    placeholder="email@agriflow.gov.in" />
+                </div>
+              </div>
+              
+              <div>
+                <label className="text-white/50 text-xs font-medium mb-1.5 block">Password</label>
+                <div className="flex gap-2">
+                  <div className="bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-white/50 text-sm flex items-center"><Lock className="w-4 h-4" /></div>
+                  <input type="password" value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm placeholder-white/20 focus:outline-none focus:border-agri-500/50"
+                    placeholder="••••••" />
+                </div>
+              </div>
+
+              <button onClick={loginOfficial} disabled={loading}
+                className="w-full bg-agri-600 hover:bg-agri-500 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 text-sm mt-2">
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
+                {loading ? "Authenticating..." : "Login to Portal"}
+              </button>
               {err && <p className="text-red-400 text-xs text-center">{err}</p>}
             </div>
           </div>

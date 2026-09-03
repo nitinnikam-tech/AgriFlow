@@ -1,60 +1,76 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { api } from '../services/api';
 
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState({
-    id: 'FMR-1002',
-    name: 'Ramesh Patil',
-    phone: '9876543210',
-    role: 'FARMER',
-    village: 'Khed Shivapur',
-    district: 'Pune',
-    state: 'Maharashtra'
-  });
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(localStorage.getItem('agriflow_jwt') || null);
+  const [loading, setLoading] = useState(true);
+  const [activeRole, setActiveRole] = useState(null); 
 
-  const [activeRole, setActiveRole] = useState('FARMER');
+  useEffect(() => {
+    const initAuth = async () => {
+      if (token) {
+        try {
+          const res = await fetch('http://localhost:5000/api/auth/profile', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            setUser(data.user);
+            setActiveRole(data.user.role);
+          } else {
+            logout();
+          }
+        } catch (error) {
+          logout();
+        }
+      }
+      setLoading(false);
+    };
+    initAuth();
+  }, [token]);
 
-  const switchRole = (newRole) => {
-    setActiveRole(newRole);
-    if (newRole === 'FARMER') {
-      setUser({
-        id: 'FMR-1002',
-        name: 'Ramesh Patil',
-        phone: '9876543210',
-        role: 'FARMER',
-        village: 'Khed Shivapur',
-        district: 'Pune'
-      });
-    } else if (newRole === 'OFFICER') {
-      setUser({
-        id: 'USR-OFF-01',
-        name: 'Sanjay Deshmukh',
-        email: 'officer@agriflow.gov.in',
-        role: 'OFFICER',
-        counterNumber: 1,
-        centreId: 'PC-PUNE-01'
-      });
-    } else if (newRole === 'ADMIN') {
-      setUser({
-        id: 'USR-ADM-01',
-        name: 'Dr. Vivek Sharma',
-        role: 'CENTRE_ADMIN',
-        centreId: 'PC-PUNE-01'
-      });
-    } else if (newRole === 'DISTRICT') {
-      setUser({
-        id: 'USR-DST-01',
-        name: 'Priyanka Patil (IAS)',
-        role: 'DISTRICT_ADMIN',
-        district: 'Pune'
-      });
+  const login = (userData, jwtToken) => {
+    localStorage.setItem('agriflow_jwt', jwtToken);
+    setToken(jwtToken);
+    setUser(userData);
+    setActiveRole(userData.role);
+  };
+
+  const logout = () => {
+    localStorage.removeItem('agriflow_jwt');
+    setToken(null);
+    setUser(null);
+    setActiveRole(null);
+  };
+
+  // Demo switcher for SIH presentation: performs real auth under the hood
+  const switchRole = async (newRole) => {
+    try {
+      if (newRole === 'FARMER') {
+        const res = await api.verifyOtp('9876543210', '123456');
+        if (res.success) login(res.user, res.token);
+      } else if (newRole === 'OFFICER') {
+        const res = await api.officialLogin('officer@agriflow.gov.in', '123456', 'OFFICER');
+        if (res.success) login(res.user, res.token);
+      } else if (newRole === 'ADMIN') {
+        const res = await api.officialLogin('admin@agriflow.gov.in', '123456', 'CENTRE_ADMIN');
+        if (res.success) login(res.user, res.token);
+      } else if (newRole === 'DISTRICT') {
+        const res = await api.officialLogin('district@agriflow.gov.in', '123456', 'DISTRICT_ADMIN');
+        if (res.success) login(res.user, res.token);
+      }
+    } catch (e) {
+      console.error('Fast role switch failed', e);
+      logout(); // Fallback to login screen
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, activeRole, switchRole, setUser }}>
-      {children}
+    <AuthContext.Provider value={{ user, token, activeRole, loading, login, logout, switchRole, setUser }}>
+      {!loading && children}
     </AuthContext.Provider>
   );
 }

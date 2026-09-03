@@ -1,5 +1,23 @@
 import { dualModeStore } from '../utils/dualModeStore.js';
 import { USER_ROLES } from '../config/constants.js';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+
+const generateToken = (user) => {
+  const secret = process.env.JWT_SECRET || 'fallback_secret_for_dev_only';
+  const expiresIn = process.env.JWT_EXPIRES_IN || '24h';
+  
+  return jwt.sign(
+    { 
+      sub: user.id, 
+      role: user.role, 
+      centreId: user.centreId,
+      district: user.district
+    }, 
+    secret, 
+    { expiresIn }
+  );
+};
 
 export const authController = {
   // Farmer OTP Login Simulation
@@ -20,7 +38,7 @@ export const authController = {
   verifyOtp: (req, res) => {
     const { phone, otp } = req.body;
     if (otp !== '123456' && otp !== '2026') {
-      return res.status(400).json({ error: 'Invalid OTP. For demo mode, please use 123456.' });
+      return res.status(401).json({ error: 'Invalid OTP. For demo mode, please use 123456.' });
     }
 
     // Return hero farmer profile (Ramesh Patil)
@@ -32,38 +50,71 @@ export const authController = {
       district: 'Pune',
       state: 'Maharashtra'
     };
+    
+    const user = { ...farmer, role: USER_ROLES.FARMER };
+    const token = generateToken(user);
 
     return res.json({
       success: true,
-      token: 'jwt_mock_farmer_session_token',
-      user: {
-        ...farmer,
-        role: USER_ROLES.FARMER
-      }
+      token,
+      user
     });
   },
 
   // Official / Admin Login
   officialLogin: (req, res) => {
     const { email, password, role } = req.body;
-    const user = dualModeStore.users.get(email) || {
-      id: 'USR-OFF-01',
-      name: 'Sanjay Deshmukh',
-      email: email || 'officer@agriflow.gov.in',
-      role: role || USER_ROLES.OFFICER,
-      centreId: 'PC-PUNE-01',
-      counterId: 'CNT-PUN-01'
-    };
+    
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
+
+    const user = dualModeStore.users.get(email);
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    if (role && user.role !== role) {
+      return res.status(403).json({ error: 'Account does not have the requested role' });
+    }
+
+    const isMatch = bcrypt.compareSync(password, user.passwordHash || '');
+    if (!isMatch) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    // Remove password hash from response
+    const { passwordHash, ...userWithoutPassword } = user;
+    const token = generateToken(userWithoutPassword);
 
     return res.json({
       success: true,
-      token: 'jwt_mock_official_session_token',
-      user
+      token,
+      user: userWithoutPassword
     });
   },
 
   getProfile: (req, res) => {
-    const farmer = dualModeStore.getFarmer('FMR-1002');
-    return res.json({ success: true, user: farmer });
+    if (!req.user) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+    
+    if (req.user.role === USER_ROLES.FARMER) {
+      const farmer = dualModeStore.getFarmer(req.user.sub);
+      if (!farmer) return res.status(404).json({ error: 'User not found' });
+      return res.json({ success: true, user: farmer });
+    } else {
+      let foundUser = null;
+      for (const user of dualModeStore.users.values()) {
+        if (user.id === req.user.sub) {
+          foundUser = user;
+          break;
+        }
+      }
+      
+      if (!foundUser) return res.status(404).json({ error: 'User not found' });
+      const { passwordHash, ...userWithoutPassword } = foundUser;
+      return res.json({ success: true, user: userWithoutPassword });
+    }
   }
 };
