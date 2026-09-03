@@ -7,14 +7,18 @@ export default function ProcurementTimeline() {
   const { heroToken } = useQueue();
   const { t } = useLanguage();
 
+  const isProcessingOrLater = ['PROCESSING', 'PROCURED', 'COMPLETED', 'PAYMENT_COMPLETED'].includes(heroToken?.status);
+  const isProcuredOrLater = ['PROCURED', 'COMPLETED', 'PAYMENT_COMPLETED'].includes(heroToken?.status);
+  const isCompletedOrLater = ['COMPLETED', 'PAYMENT_COMPLETED'].includes(heroToken?.status);
+
   const stages = [
-    { key: 'SLOT_BOOKED', label: 'Slot Booked', time: '08:30 AM', isDone: true },
-    { key: 'CHECKED_IN', label: 'Gate QR Check-In', time: '10:15 AM', isDone: true },
-    { key: 'QUEUE_WAITING', label: 'Smart Live Queue', time: 'In Progress', isDone: true, isCurrent: true },
-    { key: 'COUNTER_CALL', label: 'Counter Assignment', time: 'Pending', isDone: heroToken?.status === 'PROCESSING' || heroToken?.status === 'PROCURED' || heroToken?.status === 'COMPLETED' },
-    { key: 'QUALITY_WEIGHING', label: 'Quality & Weighing', time: 'Pending', isDone: heroToken?.status === 'PROCURED' || heroToken?.status === 'COMPLETED' },
-    { key: 'PROCURED', label: 'Procurement Verified', time: 'Pending', isDone: heroToken?.status === 'PROCURED' || heroToken?.status === 'COMPLETED' },
-    { key: 'PAYMENT_CREDITED', label: 'DBT Bank Payout', time: 'Pending', isDone: heroToken?.status === 'PAYMENT_COMPLETED' || heroToken?.paymentDetails?.status === 'COMPLETED' }
+    { key: 'ARRIVAL', label: 'Gate Arrival', time: '10:15 AM', isDone: true },
+    { key: 'QC', label: 'Quality Check (QC)', time: 'Pending', isDone: isProcessingOrLater },
+    { key: 'WEIGHING', label: 'Weighing', time: 'Pending', isDone: isProcessingOrLater },
+    { key: 'STORAGE', label: 'Storage & Bagging', time: 'Pending', isDone: isProcuredOrLater },
+    { key: 'INVOICE', label: 'Invoice Generated', time: 'Pending', isDone: isCompletedOrLater },
+    { key: 'DBT_PAYMENT', label: 'DBT Payment', time: 'Pending', isDone: heroToken?.paymentDetails?.status === 'COMPLETED' },
+    { key: 'COMPLETED', label: 'Completed', time: 'Pending', isDone: heroToken?.paymentDetails?.status === 'COMPLETED' }
   ];
 
   return (

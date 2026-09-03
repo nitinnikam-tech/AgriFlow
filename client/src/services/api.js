@@ -1,4 +1,4 @@
-const API_BASE = '/api';
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 const apiFetch = async (url, options = {}) => {
   const token = localStorage.getItem('agriflow_jwt');
@@ -70,5 +70,11 @@ export const api = {
   // Demo
   getDemoState: () => apiFetch(`${API_BASE}/demo/state`),
   advanceDemoStep: (step) => apiFetch(`${API_BASE}/demo/advance`, { method: 'POST', body: JSON.stringify({ step }) }),
-  resetDemo: () => apiFetch(`${API_BASE}/demo/reset`, { method: 'POST' })
+  resetDemo: () => apiFetch(`${API_BASE}/demo/reset`, { method: 'POST' }),
+
+  // AI Command Panel
+  getAIRecommendations: () => apiFetch(`${API_BASE}/ai/recommendations`),
+  approveAIRecommendation: (id) => apiFetch(`${API_BASE}/ai/recommendations/${id}/approve`, { method: 'POST' }),
+  dismissAIRecommendation: (id) => apiFetch(`${API_BASE}/ai/recommendations/${id}/dismiss`, { method: 'POST' }),
+  getModelHealth: () => apiFetch(`${API_BASE}/ai/health`)
 };

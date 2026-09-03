@@ -199,11 +199,16 @@ export function setupSocketHandlers(io) {
 }
 
 export async function broadcastCentreAndFarmerUpdates(io, centreId = 'PC-PUNE-01', targetTokenNumber = 'A-127', toastMessage = null) {
-  const queueState = await QueueIntelligenceService.getCentreQueueState(centreId);
+  const { queueState, recommendation } = await QueueIntelligenceService.analyzeCentre(centreId);
+  
   io.to(`centre:${centreId}`).emit('queue:update', {
     ...queueState,
     toastMessage
   });
+
+  if (recommendation) {
+    io.to(`centre:${centreId}`).emit('ai:recommendation', recommendation);
+  }
 
   const heroToken = await dualModeStore.getToken(targetTokenNumber);
   if (heroToken) {

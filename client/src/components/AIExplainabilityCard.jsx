@@ -7,11 +7,15 @@ export default function AIExplainabilityCard() {
   const { farmerETA } = useQueue();
   const { t } = useLanguage();
 
+  const peopleAhead = farmerETA?.peopleAhead ?? 18;
+  const activeCounters = farmerETA?.activeCounters ?? 4;
+  const crop = farmerETA?.cropType ?? 'Wheat';
+  
   const factors = [
-    { name: 'Live Queue Length', weight: 42, color: 'bg-blue-500', desc: '18 farmers ahead in current queue line' },
-    { name: 'Active Counter Velocity', weight: 28, color: 'bg-emerald-500', desc: '4 active counters @ 5.8m processing average' },
-    { name: 'Crop Inspection Factor', weight: 18, color: 'bg-amber-500', desc: 'Wheat moisture & FAQ grading standard' },
-    { name: 'Historical Mandi Rush Pattern', weight: 12, color: 'bg-purple-500', desc: 'Mid-morning peak rush model adjustment' }
+    { name: 'Live Queue Length', weight: farmerETA?.factorBreakdown?.queueLengthWeight?.replace('%','') || 42, color: 'bg-blue-500', desc: `${peopleAhead} farmers ahead in current queue line` },
+    { name: 'Active Counter Velocity', weight: farmerETA?.factorBreakdown?.activeCounterWeight?.replace('%','') || 28, color: 'bg-emerald-500', desc: `${activeCounters} active counters @ ${farmerETA?.avgProcessingTimeMin || 5.8}m processing average` },
+    { name: 'Crop Inspection Factor', weight: farmerETA?.factorBreakdown?.processingSpeedWeight?.replace('%','') || 18, color: 'bg-amber-500', desc: `${crop} moisture & FAQ grading standard` },
+    { name: 'Historical Mandi Rush Pattern', weight: farmerETA?.factorBreakdown?.historicalPatternWeight?.replace('%','') || 12, color: 'bg-purple-500', desc: 'Mid-morning peak rush model adjustment' }
   ];
 
   return (

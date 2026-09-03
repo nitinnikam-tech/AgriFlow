@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useQueue } from '../context/QueueContext';
 import { useLanguage } from '../context/LanguageContext';
-import { Clock, Users, Zap, ShieldCheck, AlertCircle, Compass, ArrowRight } from 'lucide-react';
+import { Clock, Users, Zap, ShieldCheck, AlertCircle, Compass, ArrowDown, ArrowUp } from 'lucide-react';
 
 export default function LiveQueueRadar() {
   const { queueState, heroToken, farmerETA } = useQueue();
@@ -12,7 +12,21 @@ export default function LiveQueueRadar() {
   const estimatedWaitMin = farmerETA?.estimatedWaitMin !== undefined ? farmerETA.estimatedWaitMin : (heroToken?.estimatedWaitMin || 32);
   const recommendedArrival = farmerETA?.recommendedArrivalTime || heroToken?.recommendedArrivalTime || '10:42 AM';
   const congestion = farmerETA?.predictedCongestion || heroToken?.predictedCongestion || 'LOW';
-  const avgProcTime = farmerETA?.avgProcessingTimeMin || heroToken?.avgProcessingTimeMin || 5.8;
+  
+  // ETA Change tracking
+  const [etaChange, setEtaChange] = useState(0); // negative means improved/dropped, positive means increased
+  const prevEtaRef = useRef(estimatedWaitMin);
+
+  useEffect(() => {
+    if (estimatedWaitMin !== prevEtaRef.current) {
+      setEtaChange(estimatedWaitMin - prevEtaRef.current);
+      prevEtaRef.current = estimatedWaitMin;
+      
+      // clear the change indicator after a few seconds
+      const timeout = setTimeout(() => setEtaChange(0), 4000);
+      return () => clearTimeout(timeout);
+    }
+  }, [estimatedWaitMin]);
 
   const getCongestionBadge = (level) => {
     switch (level) {
@@ -21,19 +35,19 @@ export default function LiveQueueRadar() {
         return {
           bg: 'bg-rose-100 text-rose-800 border-rose-300',
           dot: 'bg-rose-500',
-          text: t('high')
+          text: 'Very Busy' // Human language
         };
       case 'MEDIUM':
         return {
           bg: 'bg-amber-100 text-amber-800 border-amber-300',
           dot: 'bg-amber-500',
-          text: t('medium')
+          text: 'Moderately Busy'
         };
       default:
         return {
           bg: 'bg-emerald-100 text-emerald-800 border-emerald-300',
           dot: 'bg-emerald-500',
-          text: t('low')
+          text: 'Normal Flow'
         };
     }
   };
@@ -59,7 +73,7 @@ export default function LiveQueueRadar() {
               </span>
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1 animate-ping" />
-                REAL-TIME SYNC
+                LIVE
               </span>
             </div>
             <h2 className="text-lg sm:text-xl font-extrabold text-white">
@@ -73,9 +87,6 @@ export default function LiveQueueRadar() {
           <div className="text-right">
             <div className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">{t('token')}</div>
             <div className="text-xl sm:text-2xl font-black text-amber-400 tracking-tight">A-127</div>
-          </div>
-          <div className="w-9 h-9 rounded-xl bg-amber-400/20 text-amber-300 flex items-center justify-center font-bold text-sm">
-            🌾
           </div>
         </div>
       </div>
@@ -93,8 +104,11 @@ export default function LiveQueueRadar() {
             <span className="text-xs text-slate-400">farmers</span>
           </div>
           <div className="mt-3 text-[11px] text-slate-400 flex items-center space-x-1 border-t border-slate-700/50 pt-2">
-            <span className="text-emerald-400 font-semibold">{queueState?.queueVelocityPerMin || 0.69}</span>
-            <span>tokens / min velocity</span>
+            {congestion === 'HIGH' || congestion === 'CRITICAL' ? (
+              <span className="text-rose-300 leading-tight">More farmers arriving right now.</span>
+            ) : (
+              <span className="text-emerald-300 leading-tight">Queue is moving steadily.</span>
+            )}
           </div>
         </div>
 
@@ -109,12 +123,12 @@ export default function LiveQueueRadar() {
             <span className="text-xs text-slate-400">/ 6 active</span>
           </div>
           <div className="mt-3 text-[11px] text-slate-400 flex items-center space-x-1 border-t border-slate-700/50 pt-2">
-            <span>Avg {avgProcTime}m per crop batch</span>
+            <span className="leading-tight">Counters processing actively.</span>
           </div>
         </div>
 
         {/* Metric 3: Estimated Waiting Time */}
-        <div className="bg-gradient-to-br from-agri-950/80 to-slate-800/80 border border-agri-500/40 rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-lg glow-green backdrop-blur-xs">
+        <div className="bg-gradient-to-br from-agri-950/80 to-slate-800/80 border border-agri-500/40 rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-lg glow-green backdrop-blur-xs relative overflow-hidden">
           <div className="flex items-center justify-between text-agri-300 mb-2">
             <span className="text-xs font-bold uppercase tracking-wider">{t('estimatedWait')}</span>
             <Clock className="w-4 h-4 text-agri-400" />
@@ -124,9 +138,17 @@ export default function LiveQueueRadar() {
               {estimatedWaitMin}
             </span>
             <span className="text-xs text-agri-400 font-semibold">{t('minutes')}</span>
+            
+            {/* Visual ETA Change Indicator */}
+            {etaChange !== 0 && (
+              <div className={`flex items-center text-xs font-bold px-1.5 py-0.5 rounded animate-bounce ${etaChange < 0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>
+                {etaChange < 0 ? <ArrowDown className="w-3 h-3 mr-0.5"/> : <ArrowUp className="w-3 h-3 mr-0.5"/>}
+                {Math.abs(etaChange)}m
+              </div>
+            )}
           </div>
           <div className="mt-3 text-[11px] text-agri-300/80 flex items-center space-x-1 border-t border-agri-700/40 pt-2 font-medium">
-            <span>AI Confidence: {farmerETA?.confidenceScore || 89}%</span>
+            <span>Powered by AI Analysis</span>
           </div>
         </div>
 
@@ -140,7 +162,7 @@ export default function LiveQueueRadar() {
             {recommendedArrival}
           </div>
           <div className="mt-3 flex items-center justify-between border-t border-slate-700/50 pt-2">
-            <span className="text-[11px] text-slate-400">{t('congestion')}:</span>
+            <span className="text-[11px] text-slate-400">Queue Status:</span>
             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${badge.bg}`}>
               <span className={`w-1.5 h-1.5 rounded-full mr-1 ${badge.dot}`} />
               {badge.text}
@@ -156,11 +178,11 @@ export default function LiveQueueRadar() {
             <AlertCircle className="w-4 h-4" />
           </div>
           <p className="text-xs sm:text-sm text-slate-300">
-            <strong className="text-white font-semibold">AgriFlow Intelligence:</strong> {peopleAhead} farmer{peopleAhead === 1 ? ' is' : 's are'} currently ahead. With {activeCounters} counter{activeCounters === 1 ? '' : 's'} operating at {avgProcTime}m velocity, you do not need to wait in the mandi yard until <span className="text-amber-400 font-bold">{recommendedArrival}</span>.
+            <strong className="text-white font-semibold">Smart Recommendation:</strong> Avoid waiting in the sun. Based on {peopleAhead} farmers ahead of you and {activeCounters} active counters, plan your arrival for <span className="text-amber-400 font-bold">{recommendedArrival}</span>.
           </p>
         </div>
         <div className="flex items-center space-x-2 shrink-0">
-          <span className="text-xs text-agri-400 font-medium hidden md:inline">"The Queue Comes To The Farmer"</span>
+          <span className="text-xs text-agri-400 font-medium hidden md:inline">"The Queue Comes To You"</span>
         </div>
       </div>
     </div>

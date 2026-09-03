@@ -72,7 +72,7 @@ async function runE2ETests() {
     assert.ok(data.token, 'Token A-127 should exist');
     assert.strictEqual(data.token.tokenNumber, 'A-127');
     assert.strictEqual(data.token.cropType, 'WHEAT');
-    assert.strictEqual(data.token.farmerName, 'Ramesh Patil');
+    assert.strictEqual(data.token.farmerName, 'Ramesh Patil (रमेश पाटील)');
     assert.ok(data.token.peopleAhead >= 0);
     assert.ok(data.token.estimatedWaitMin > 0);
     pass(`Hero Token A-127: ${data.token.peopleAhead} ahead | ETA ${data.token.estimatedWaitMin}min | Crop: ${data.token.cropType}`);

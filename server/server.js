@@ -6,6 +6,8 @@ import morgan from 'morgan';
 import dotenv from 'dotenv';
 import apiRoutes from './routes/apiRoutes.js';
 import { setupSocketHandlers } from './socket/socketHandler.js';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 
 dotenv.config();
 
@@ -14,15 +16,35 @@ const server = http.createServer(app);
 
 const PORT = process.env.PORT || 5000;
 
+const allowedOrigins = process.env.CORS_ORIGIN 
+  ? process.env.CORS_ORIGIN.split(',') 
+  : ['http://localhost:5173'];
+
 const io = new Server(server, {
   cors: {
-    origin: '*',
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
+    origin: allowedOrigins,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    credentials: true
   }
 });
 app.set('io', io);
 
-app.use(cors({ origin: '*' }));
+// Security Headers
+app.use(helmet());
+
+// Rate Limiting (lightweight for SIH demo)
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 1000, // limit each IP to 1000 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/', limiter);
+
+app.use(cors({ 
+  origin: allowedOrigins,
+  credentials: true 
+}));
 app.use(express.json());
 app.use(morgan('dev'));
 

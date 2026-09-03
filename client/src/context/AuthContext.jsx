@@ -14,7 +14,7 @@ export function AuthProvider({ children }) {
     const initAuth = async () => {
       if (token) {
         try {
-          const res = await fetch('http://localhost:5000/api/auth/profile', {
+          const res = await fetch('/api/auth/profile', {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           if (res.ok) {

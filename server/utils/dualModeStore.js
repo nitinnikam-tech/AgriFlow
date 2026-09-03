@@ -12,6 +12,7 @@ class DualModeStore {
     this.auditLogs = [];
     this.notifications = new Map();
     this.users = new Map();
+    this.recommendations = new Map();
     this.demoScenarioStep = 0;
     this.isSimulatingCongestion = false;
 
@@ -381,6 +382,21 @@ class DualModeStore {
       ...notification
     });
     return notifs;
+  }
+
+  getRecommendationsByCentre(centreId) {
+    return Array.from(this.recommendations.values())
+      .filter(r => r.centreId === centreId)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  }
+
+  getRecommendation(id) {
+    return this.recommendations.get(id);
+  }
+
+  saveRecommendation(rec) {
+    this.recommendations.set(rec.id, rec);
+    return rec;
   }
 }
 

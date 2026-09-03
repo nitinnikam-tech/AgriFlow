@@ -22,7 +22,7 @@ export const demoController = {
 
   advanceStep: async (req, res) => {
     const { step } = req.body;
-    (await dualModeStore.getDemoScenarioStep()) = Number(step);
+    await dualModeStore.setDemoScenarioStep(Number(step));
 
     const heroToken = await dualModeStore.getToken('A-127');
 
@@ -98,7 +98,7 @@ export const demoController = {
 
   resetDemo: async (req, res) => {
     await dualModeStore.initSeedData();
-    (await dualModeStore.getDemoScenarioStep()) = 0;
+    await dualModeStore.setDemoScenarioStep(0);
     await dualModeStore.setIsSimulatingCongestion(false);
     return res.json({
       success: true,

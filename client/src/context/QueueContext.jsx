@@ -13,6 +13,7 @@ export function QueueProvider({ children }) {
   const [farmerETA, setFarmerETA] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [isConnected, setIsConnected] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState('OFFLINE'); // LIVE, RECONNECTING, OFFLINE
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [demoStep, setDemoStep] = useState(1);
   const [toastMessage, setToastMessage] = useState(null);
@@ -44,11 +45,20 @@ export function QueueProvider({ children }) {
 
     socket.on('connect', () => {
       setIsConnected(true);
+      setConnectionStatus('LIVE');
       socket.emit('join:centre', centreId);
       socket.emit('join:farmer', { tokenNumber: targetTokenNumber, centreId });
     });
 
-    socket.on('disconnect', () => setIsConnected(false));
+    socket.on('disconnect', () => {
+      setIsConnected(false);
+      setConnectionStatus('OFFLINE');
+    });
+
+    socket.on('connect_error', () => {
+      setIsConnected(false);
+      setConnectionStatus('RECONNECTING');
+    });
 
     socket.on('queue:update', (data) => {
       setQueueState(data);
@@ -133,6 +143,7 @@ export function QueueProvider({ children }) {
       farmerETA,
       notifications,
       isConnected,
+      connectionStatus,
       audioEnabled,
       setAudioEnabled,
       demoStep,

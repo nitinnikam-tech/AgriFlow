@@ -3,7 +3,6 @@ import { useLanguage } from '../context/LanguageContext';
 import { useQueue } from '../context/QueueContext';
 import LiveQueueRadar from '../components/LiveQueueRadar';
 import SmartTokenCard from '../components/SmartTokenCard';
-import AIExplainabilityCard from '../components/AIExplainabilityCard';
 import SmartSlotBookingModal from '../components/SmartSlotBookingModal';
 import ProcurementTimeline from '../components/ProcurementTimeline';
 import PaymentTrackerCard from '../components/PaymentTrackerCard';
@@ -36,7 +35,9 @@ export default function FarmerHome() {
             >
               <Bell className="w-5 h-5" />
               {notifications.length > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-rose-500 rounded-full ring-2 ring-white animate-pulse" />
+                <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-[20px] bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full ring-2 ring-white animate-bounce">
+                  {Array.from(new Map(notifications.map(n => [n.title + n.body, n])).values()).length}
+                </span>
               )}
             </button>
           </div>
@@ -50,10 +51,9 @@ export default function FarmerHome() {
           <LiveQueueRadar />
         </section>
 
-        {/* 2. Farmer Smart Pass & AI Wait-Time Factor Explainability */}
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* 2. Farmer Smart Pass */}
+        <section>
           <SmartTokenCard onOpenSlotBooking={() => setIsSlotModalOpen(true)} />
-          <AIExplainabilityCard />
         </section>
 
         {/* 3. Procurement Lifecycle Timeline */}
@@ -108,16 +108,23 @@ export default function FarmerHome() {
       {/* Notifications Drawer */}
       {showNotifDrawer && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-2xs flex justify-end">
-          <div className="bg-white w-full max-w-md h-full p-6 shadow-2xl overflow-y-auto">
+          <div className="bg-white w-full max-w-md h-full p-6 shadow-2xl overflow-y-auto animate-fade-in">
             <div className="flex items-center justify-between pb-4 border-b border-slate-200">
-              <h3 className="font-extrabold text-slate-900 text-lg">Mandi Notifications</h3>
+              <h3 className="font-extrabold text-slate-900 text-lg flex items-center">
+                Mandi Notifications
+                {notifications.length > 0 && (
+                  <span className="ml-2 bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    {Array.from(new Map(notifications.map(n => [n.title + n.body, n])).values()).length} New
+                  </span>
+                )}
+              </h3>
               <button onClick={() => setShowNotifDrawer(false)} className="text-sm font-bold text-slate-400 hover:text-slate-700">
                 Close
               </button>
             </div>
 
             <div className="mt-4 space-y-3">
-              {notifications.map((n) => (
+              {Array.from(new Map(notifications.map(n => [n.title + n.body, n])).values()).reverse().map((n) => (
                 <div key={n.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs font-bold text-slate-900">{n.title}</span>

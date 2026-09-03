@@ -14,13 +14,13 @@ export default function SmartSlotBookingModal({ isOpen, onClose }) {
   if (!isOpen) return null;
 
   const slots = [
-    { id: 'SLOT-0900', time: '09:00 AM – 09:30 AM', congestion: 'HIGH', color: 'border-rose-300 bg-rose-50/50 text-rose-900', badge: 'bg-rose-100 text-rose-800' },
-    { id: 'SLOT-0930', time: '09:30 AM – 10:00 AM', congestion: 'HIGH', color: 'border-rose-300 bg-rose-50/50 text-rose-900', badge: 'bg-rose-100 text-rose-800' },
-    { id: 'SLOT-1000', time: '10:00 AM – 10:30 AM', congestion: 'MEDIUM', color: 'border-amber-300 bg-amber-50/50 text-amber-900', badge: 'bg-amber-100 text-amber-800' },
-    { id: 'SLOT-1030', time: '10:30 AM – 11:00 AM', congestion: 'LOW', isRecommended: true, color: 'border-emerald-500 bg-emerald-50/80 text-emerald-950 ring-2 ring-emerald-500', badge: 'bg-emerald-200 text-emerald-900 font-extrabold' },
-    { id: 'SLOT-1100', time: '11:00 AM – 11:30 AM', congestion: 'LOW', isRecommended: true, color: 'border-emerald-400 bg-emerald-50/50 text-emerald-950', badge: 'bg-emerald-100 text-emerald-800 font-bold' },
-    { id: 'SLOT-1130', time: '11:30 AM – 12:00 PM', congestion: 'LOW', color: 'border-emerald-300 bg-emerald-50/40 text-emerald-950', badge: 'bg-emerald-100 text-emerald-800' },
-    { id: 'SLOT-1200', time: '12:00 PM – 12:30 PM', congestion: 'MEDIUM', color: 'border-amber-300 bg-amber-50/50 text-amber-900', badge: 'bg-amber-100 text-amber-800' }
+    { id: 'SLOT-0900', time: '09:00 AM – 09:30 AM', congestion: 'Very Busy', color: 'border-rose-300 bg-rose-50/50 text-rose-900', badge: 'bg-rose-100 text-rose-800' },
+    { id: 'SLOT-0930', time: '09:30 AM – 10:00 AM', congestion: 'Very Busy', color: 'border-rose-300 bg-rose-50/50 text-rose-900', badge: 'bg-rose-100 text-rose-800' },
+    { id: 'SLOT-1000', time: '10:00 AM – 10:30 AM', congestion: 'Moderately Busy', color: 'border-amber-300 bg-amber-50/50 text-amber-900', badge: 'bg-amber-100 text-amber-800' },
+    { id: 'SLOT-1030', time: '10:30 AM – 11:00 AM', congestion: 'Normal Flow', isRecommended: true, color: 'border-emerald-500 bg-emerald-50/80 text-emerald-950 ring-2 ring-emerald-500', badge: 'bg-emerald-200 text-emerald-900 font-extrabold' },
+    { id: 'SLOT-1100', time: '11:00 AM – 11:30 AM', congestion: 'Normal Flow', isRecommended: true, color: 'border-emerald-400 bg-emerald-50/50 text-emerald-950', badge: 'bg-emerald-100 text-emerald-800 font-bold' },
+    { id: 'SLOT-1130', time: '11:30 AM – 12:00 PM', congestion: 'Normal Flow', color: 'border-emerald-300 bg-emerald-50/40 text-emerald-950', badge: 'bg-emerald-100 text-emerald-800' },
+    { id: 'SLOT-1200', time: '12:00 PM – 12:30 PM', congestion: 'Moderately Busy', color: 'border-amber-300 bg-amber-50/50 text-amber-900', badge: 'bg-amber-100 text-amber-800' }
   ];
 
   const handleConfirmBooking = () => {
@@ -116,7 +116,7 @@ export default function SmartSlotBookingModal({ isOpen, onClose }) {
                 </div>
 
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${s.badge}`}>
-                  {s.congestion} CONGESTION
+                  {s.congestion}
                 </span>
               </div>
             ))}

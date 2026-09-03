@@ -2,16 +2,21 @@ import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
 import { ResponsiveContainer, LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from 'recharts';
-import { Activity, TrendingUp, Users, Clock, AlertTriangle, CheckCircle2, Shield, Download } from 'lucide-react';
+import { Activity, TrendingUp, Users, Clock, AlertTriangle, CheckCircle2, Shield, Download, Check, BrainCircuit } from 'lucide-react';
 
 export default function DistrictAnalytics() {
   const { t } = useLanguage();
   const [data, setData] = useState(null);
+  const [modelHealth, setModelHealth] = useState(null);
 
   useEffect(() => {
     api.getAnalytics('PC-PUNE-01').then(res => {
       if (res.success) setData(res);
     }).catch(console.error);
+
+    api.getModelHealth().then(res => {
+      if (res && res.data) setModelHealth(res.data);
+    }).catch(e => console.error(e));
   }, []);
 
   const hourlyArrivals = data?.hourlyArrivals || [
@@ -74,6 +79,50 @@ export default function DistrictAnalytics() {
       </div>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 space-y-8">
+        
+        {/* Model Health Dashboard */}
+        {modelHealth && (
+          <section className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-3xl border border-indigo-100 shadow-sm p-6 sm:p-7">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-indigo-200/50 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="bg-indigo-600 text-white p-2.5 rounded-xl shadow-sm">
+                  <BrainCircuit className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="font-extrabold text-indigo-900 text-lg">AI Model Health & Transparency</h2>
+                  <p className="text-xs text-indigo-600 font-medium tracking-wide">Live Status: {modelHealth.status}</p>
+                </div>
+              </div>
+              <div className="bg-white/80 border border-indigo-100 px-3 py-1.5 rounded-lg">
+                <p className="text-[10px] font-bold text-slate-500 uppercase">Model Checksum / Validation</p>
+                <p className="text-xs font-semibold text-slate-800 flex items-center gap-1 mt-0.5">
+                  <Check className="w-3 h-3 text-emerald-600" />
+                  {modelHealth.disclaimer}
+                </p>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-5">
+              <div className="bg-white rounded-2xl p-4 border border-indigo-50 shadow-sm">
+                <p className="text-xs font-bold text-slate-500 uppercase mb-1">Architecture</p>
+                <p className="text-lg font-black text-indigo-900">{modelHealth.model}</p>
+              </div>
+              <div className="bg-white rounded-2xl p-4 border border-indigo-50 shadow-sm">
+                <p className="text-xs font-bold text-slate-500 uppercase mb-1">Mean Absolute Error (MAE)</p>
+                <p className="text-lg font-black text-emerald-700">{modelHealth.mae}</p>
+              </div>
+              <div className="bg-white rounded-2xl p-4 border border-indigo-50 shadow-sm">
+                <p className="text-xs font-bold text-slate-500 uppercase mb-1">R² Score</p>
+                <p className="text-lg font-black text-emerald-700">{modelHealth.r2}</p>
+              </div>
+              <div className="bg-white rounded-2xl p-4 border border-indigo-50 shadow-sm">
+                <p className="text-xs font-bold text-slate-500 uppercase mb-1">Training Records</p>
+                <p className="text-lg font-black text-indigo-900">{modelHealth.trainingRecords.toLocaleString()}</p>
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* KPI Grid */}
         <section className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs">

@@ -49,6 +49,11 @@ class PersistenceManager {
   // --- Quality Inspections ---
   async saveQualityInspection(tokenNumber, record) { return this._getRepo().saveQualityInspection(tokenNumber, record); }
 
+  // --- AI Recommendations ---
+  async getRecommendation(id) { return this._getRepo().getRecommendation(id); }
+  async getRecommendationsByCentre(centreId) { return this._getRepo().getRecommendationsByCentre(centreId); }
+  async saveRecommendation(rec) { return this._getRepo().saveRecommendation(rec); }
+
   // --- Demo Variables ---
   async getDemoScenarioStep() { return this._getRepo().getDemoScenarioStep(); }
   async setDemoScenarioStep(step) { return this._getRepo().setDemoScenarioStep(step); }

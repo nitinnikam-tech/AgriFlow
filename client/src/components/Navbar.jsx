@@ -8,7 +8,7 @@ import { Link, useLocation } from 'react-router-dom';
 export default function Navbar() {
   const { activeRole, switchRole, logout } = useAuth();
   const { lang, setLang, t } = useLanguage();
-  const { isConnected, audioEnabled, setAudioEnabled } = useQueue();
+  const { isConnected, connectionStatus, audioEnabled, setAudioEnabled } = useQueue();
   const location = useLocation();
 
   return (
@@ -129,14 +129,24 @@ export default function Navbar() {
             {/* WebSocket Live Status */}
             <div
               className={`flex items-center space-x-1 text-[11px] font-semibold px-2 py-1 rounded-full border ${
-                isConnected
+                connectionStatus === 'LIVE'
                   ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  : connectionStatus === 'RECONNECTING'
+                  ? 'bg-amber-50 text-amber-700 border-amber-200'
                   : 'bg-rose-50 text-rose-700 border-rose-200'
               }`}
-              title={isConnected ? 'Real-Time WebSocket Active' : 'Connecting to Real-Time Server...'}
+              title={
+                connectionStatus === 'LIVE' ? 'Real-Time WebSocket Active' :
+                connectionStatus === 'RECONNECTING' ? 'Reconnecting to Server...' :
+                'Connecting to Real-Time Server...'
+              }
             >
-              <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-500 animate-ping' : 'bg-rose-500'}`} />
-              <span className="hidden sm:inline">{isConnected ? 'LIVE' : 'OFFLINE'}</span>
+              <span className={`w-2 h-2 rounded-full ${
+                connectionStatus === 'LIVE' ? 'bg-emerald-500 animate-ping' :
+                connectionStatus === 'RECONNECTING' ? 'bg-amber-500 animate-pulse' :
+                'bg-rose-500'
+              }`} />
+              <span className="hidden sm:inline">{connectionStatus}</span>
             </div>
 
             {/* Logout Button */}

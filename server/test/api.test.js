@@ -42,7 +42,15 @@ try {
   assert.ok(proposal.recommendedShifts.length > 0, 'Must have shift recommendations');
   console.log('✅ Test 5: Dynamic Slot Optimization Engine Passed');
 
-  console.log('\n🎉 ALL 5 BACKEND & QUEUE INTELLIGENCE TESTS PASSED SUCCESSFULLY!\n');
+  // Test 6: AI Recommendation Engine
+  await dualModeStore.setIsSimulatingCongestion(true); // Trigger high congestion mode
+  const { queueState: state6, recommendation } = await QueueIntelligenceService.analyzeCentre('PC-PUNE-01');
+  assert.ok(recommendation, 'Recommendation must be generated under HIGH congestion');
+  assert.strictEqual(recommendation.type, 'ACTIVATE_STANDBY_COUNTER', 'Must recommend activating standby counter');
+  assert.strictEqual(recommendation.requiresApproval, true, 'Recommendation must require human approval');
+  console.log('✅ Test 6: AI Recommendation Engine Passed');
+
+  console.log('\n🎉 ALL 6 BACKEND & QUEUE INTELLIGENCE TESTS PASSED SUCCESSFULLY!\n');
 } catch (err) {
   console.error('❌ Test Failure:', err);
   process.exit(1);

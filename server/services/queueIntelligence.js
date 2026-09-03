@@ -100,4 +100,45 @@ export class QueueIntelligenceService {
       }
     };
   }
+
+  static async analyzeCentre(centreId = 'PC-PUNE-01') {
+    const queueState = await this.getCentreQueueState(centreId);
+    let recommendation = null;
+
+    if (queueState.currentCongestion === CONGESTION_LEVELS.HIGH || queueState.currentCongestion === CONGESTION_LEVELS.CRITICAL) {
+      // Find if we have standby counters
+      const counters = queueState.activeCounters || await dualModeStore.getCountersByCentre(centreId);
+      const standbyCounter = counters.find(c => c.status === 'IDLE' || c.status === 'INACTIVE');
+      
+      if (standbyCounter) {
+        // Calculate projected impact
+        const currentWaitRaw = (queueState.waitingCount * queueState.avgProcessingTimeMin) / queueState.activeCountersCount;
+        const projectedWaitRaw = (queueState.waitingCount * queueState.avgProcessingTimeMin) / (queueState.activeCountersCount + 1);
+        const projectedReduction = Math.round(currentWaitRaw - projectedWaitRaw);
+        
+        recommendation = {
+          id: `REC-${Date.now()}`,
+          centreId,
+          type: 'ACTIVATE_STANDBY_COUNTER',
+          severity: 'HIGH',
+          reason: `Arrival rate currently exceeds service rate. Queue has reached ${queueState.waitingCount} farmers.`,
+          currentState: `Active Counters: ${queueState.activeCountersCount}/${queueState.totalCountersCount} | Wait: ${Math.round(currentWaitRaw)} min`,
+          recommendedAction: `Activate ${standbyCounter.counterNumber} (${standbyCounter.id})`,
+          targetCounterId: standbyCounter.id,
+          projectedImpact: `Estimated queue wait reduction: ~${projectedReduction} min`,
+          createdAt: new Date().toISOString(),
+          requiresApproval: true,
+          status: 'PENDING'
+        };
+
+        // Save it to the dual mode store
+        await dualModeStore.saveRecommendation(recommendation);
+      }
+    }
+
+    return {
+      queueState,
+      recommendation
+    };
+  }
 }

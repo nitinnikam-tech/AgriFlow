@@ -9,6 +9,7 @@ import { officialController } from '../controllers/officialController.js';
 import { qualityController } from '../controllers/qualityController.js';
 import { paymentController } from '../controllers/paymentController.js';
 import { analyticsController } from '../controllers/analyticsController.js';
+import { aiController } from '../controllers/aiController.js';
 import { demoController } from '../controllers/demoController.js';
 import { AIInferenceService } from '../services/aiInferenceService.js';
 import { NotificationService } from '../services/notificationService.js';
@@ -72,6 +73,12 @@ router.post('/ai/predict-eta', async (req, res) => {
   const result = await AIInferenceService.predictWaitingTime(req.body);
   return res.json({ success: true, ...result });
 });
+
+// 10.b AI Recommendation Engine
+router.get('/ai/recommendations', authMiddleware, authorizeRoles(USER_ROLES.OFFICER, USER_ROLES.CENTRE_ADMIN, USER_ROLES.SYSTEM_ADMIN), aiController.getRecommendations);
+router.post('/ai/recommendations/:id/approve', authMiddleware, authorizeRoles(USER_ROLES.OFFICER, USER_ROLES.CENTRE_ADMIN, USER_ROLES.SYSTEM_ADMIN), aiController.approveRecommendation);
+router.post('/ai/recommendations/:id/dismiss', authMiddleware, authorizeRoles(USER_ROLES.OFFICER, USER_ROLES.CENTRE_ADMIN, USER_ROLES.SYSTEM_ADMIN), aiController.dismissRecommendation);
+router.get('/ai/health', aiController.getHealth);
 
 // 11. Notifications Hub
 router.get('/notifications/farmer/:farmerId', authMiddleware, authorizeRoles(USER_ROLES.FARMER), async (req, res) => {

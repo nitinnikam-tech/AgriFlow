@@ -22,9 +22,9 @@ export default function DemoControllerBar() {
     { step: 1, label: '1. Baseline', desc: 'Hero Token Booked (Arrival Window Open)' },
     { step: 2, label: '2. QR Check-In', desc: 'Farmer arrives. Officer scans A-127 QR -> Joins Live Queue' },
     { step: 3, label: '3. Token Completed', desc: 'Officer completes A-109 -> Real-time sync (17 ahead, ETA 29m)' },
-    { step: 4, label: '4. Congestion Spike', desc: 'Sudden arrivals spike -> AI detects HIGH congestion (ETA 48m)' },
-    { step: 5, label: '5. Dynamic Rebalance', desc: 'System shifts 8 farmers -> Capacity normalized 86% to 61%' },
-    { step: 6, label: '6. Activate Counter 5', desc: 'Official enables Counter 5 -> ETA drops to 19m' }
+    { step: 4, label: '4. Congestion Spike', desc: 'Sudden arrivals. AI detects HIGH congestion & Generates Recommendation' },
+    { step: 5, label: '5. AI Command Approval', desc: 'Officer reviews AI Command Panel and clicks [Approve]' },
+    { step: 6, label: '6. ETA Recalculation', desc: 'Counter 5 Activates -> Live Queue Velocity increases -> ETA drops' }
   ];
 
   const handleStepClick = async (s) => {
@@ -33,16 +33,28 @@ export default function DemoControllerBar() {
     else if (s === 2) {
       try {
         const { api } = await import('../services/api');
-        await api.post('/api/tokens/verify-qr', { qrData: JSON.stringify({ token: 'A-127' }) });
-        // The socket broadcast will automatically update the frontend context
+        await api.verifyQrCheckIn({ token: 'A-127', centre: 'PC-PUNE-01', farmer: 'FMR-1002', date: '2026-09-02', securityHash: 'AGF-SEC-99214' });
       } catch (err) {
         console.error('Check-in failed in demo', err);
       }
     }
     else if (s === 3) completeToken('CNT-PUN-01', 'A-109');
     else if (s === 4) triggerCongestionSpike();
-    else if (s === 5) applySlotOptimization();
-    else if (s === 6) addCounter();
+    else if (s === 5) {
+      // In the actual demo, the officer would click the AI Panel. We simulate that API call here just in case.
+      try {
+        const { api } = await import('../services/api');
+        const res = await api.getAIRecommendations();
+        if (res?.data && res.data.length > 0) {
+           await api.approveAIRecommendation(res.data[0].id);
+        } else {
+           addCounter(); // Fallback
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    else if (s === 6) applySlotOptimization();
   };
 
   return (
@@ -71,11 +83,18 @@ export default function DemoControllerBar() {
         </div>
 
         <div className="flex items-center space-x-2">
+          <button
+            onClick={() => { setDemoStep(1); resetDemoState(); }}
+            className="flex items-center px-2 py-1 text-[11px] font-bold text-slate-300 bg-slate-800 hover:bg-slate-700 hover:text-white rounded border border-slate-700 transition-colors mr-2"
+          >
+            <RefreshCcw className="w-3 h-3 mr-1" />
+            Reset Demo
+          </button>
           <Link
             to="/hero-demo"
             className="text-[11px] font-bold text-amber-300 hover:text-amber-200 underline hidden sm:inline mr-2"
           >
-            Launch Fullscreen Pitch Screen →
+            Launch Fullscreen Pitch Screen ↗
           </Link>
           <button
             onClick={() => setIsExpanded(!isExpanded)}

@@ -42,27 +42,35 @@ export default function PaymentTrackerCard() {
             </div>
             <div>
               <h3 className="font-bold text-slate-900 text-base">{t('paymentTracker')}</h3>
-              <p className="text-xs text-slate-500">DoCA Direct Benefit Transfer (DBT)</p>
+              <p className="text-xs text-slate-500">DBT Simulation Demo</p>
             </div>
           </div>
           <span className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full border ${
             isPaid ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-amber-100 text-amber-800 border-amber-200'
           }`}>
-            {isPaid ? 'CREDITED' : 'PROCESSING'}
+            {isPaid ? 'CREDITED (SIMULATED)' : 'PROCESSING'}
           </span>
         </div>
 
         {/* Payout Display Box */}
-        <div className="my-5 p-4 rounded-2xl bg-gradient-to-br from-emerald-900 to-slate-900 text-white shadow-md">
-          <span className="text-[11px] font-semibold text-emerald-300 uppercase tracking-wider">Approved Procurement Payout</span>
+        <div className="my-5 p-4 rounded-2xl bg-gradient-to-br from-emerald-900 to-slate-900 text-white shadow-md relative overflow-hidden">
+          {/* Simulation Watermark */}
+          <div className="absolute -right-4 -bottom-4 text-[60px] font-black text-white/5 tracking-tighter transform -rotate-12 pointer-events-none uppercase">
+            SIMULATION
+          </div>
+          
+          <span className="text-[11px] font-semibold text-emerald-300 uppercase tracking-wider flex items-center justify-between">
+            Approved Procurement Payout
+            <span className="bg-white/10 px-1.5 py-0.5 rounded text-[9px]">DEMO MODE</span>
+          </span>
           <div className="text-3xl sm:text-4xl font-black text-white tracking-tight mt-1 flex items-baseline">
             <span>₹{amount.toLocaleString('en-IN')}</span>
             <span className="text-xs text-emerald-300 font-normal ml-2">(520 kg @ MSP ₹2,400/q)</span>
           </div>
-          <div className="mt-3 text-xs text-slate-300 flex items-center justify-between border-t border-slate-700/60 pt-2">
-            <span>Ref: AGF-PFMS-982147</span>
+          <div className="mt-3 text-xs text-slate-300 flex items-center justify-between border-t border-slate-700/60 pt-2 relative z-10">
+            <span>Ref: DEMO-PFMS-982147</span>
             <span className="text-emerald-400 font-semibold flex items-center">
-              <ShieldCheck className="w-3.5 h-3.5 mr-1" /> PFMS Ready
+              <ShieldCheck className="w-3.5 h-3.5 mr-1" /> Simulated API
             </span>
           </div>
         </div>
@@ -73,7 +81,7 @@ export default function PaymentTrackerCard() {
             <div className="flex items-center space-x-2">
               <Landmark className="w-4 h-4 text-slate-500" />
               <div>
-                <span className="font-bold text-slate-800">State Bank of India</span>
+                <span className="font-bold text-slate-800">State Bank of India (Demo)</span>
                 <p className="text-[10px] text-slate-400">A/C: •••••••••••7712 • IFSC: SBIN0001234</p>
               </div>
             </div>
@@ -96,7 +104,7 @@ export default function PaymentTrackerCard() {
           {isPaid ? (
             <>
               <CheckCircle className="w-4 h-4 text-emerald-600 mr-1" />
-              <span>₹12,480 Credited to Farmer Account</span>
+              <span>₹{amount.toLocaleString('en-IN')} Credited to Account (Demo)</span>
             </>
           ) : (
             <>

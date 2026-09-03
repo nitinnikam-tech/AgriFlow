@@ -116,6 +116,11 @@ class MongoRepository {
   async getIsSimulatingCongestion() { return await dualModeStore.getIsSimulatingCongestion(); }
   async setIsSimulatingCongestion(value) { return await dualModeStore.setIsSimulatingCongestion(value); }
   
+  // --- AI Recommendations (Memory-based for Demo speed) ---
+  async getRecommendation(id) { return dualModeStore.getRecommendation(id); }
+  async getRecommendationsByCentre(centreId) { return dualModeStore.getRecommendationsByCentre(centreId); }
+  async saveRecommendation(rec) { return dualModeStore.saveRecommendation(rec); }
+
   async initSeedData() {
     dualModeStore.initSeedData();
     

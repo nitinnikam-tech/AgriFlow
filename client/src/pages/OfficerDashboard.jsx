@@ -4,6 +4,8 @@ import { useLanguage } from '../context/LanguageContext';
 import { api } from '../services/api';
 import { Shield, Play, CheckCircle2, Pause, Plus, QrCode, Sparkles, AlertCircle, RefreshCw, UserCheck, Scale, FileText } from 'lucide-react';
 import QrScannerModal from '../components/officer/QrScannerModal';
+import AICommandPanel from '../components/officer/AICommandPanel';
+import AIExplainabilityCard from '../components/AIExplainabilityCard';
 
 export default function OfficerDashboard() {
   const { queueState, callNext, completeToken, toggleCounter, addCounter, resetDemoState } = useQueue();
@@ -92,6 +94,16 @@ export default function OfficerDashboard() {
 
       {/* Main Command Dashboard */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 space-y-8">
+        
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <AICommandPanel />
+          </div>
+          <div className="lg:col-span-1">
+            <AIExplainabilityCard />
+          </div>
+        </div>
+
         {/* Counter Action Desk */}
         <section className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-7">
           <div className="flex items-center justify-between pb-4 border-b border-slate-100">
@@ -331,20 +343,6 @@ export default function OfficerDashboard() {
       <QrScannerModal
         isOpen={isScannerOpen}
         onClose={() => setIsScannerOpen(false)}
-        onScanSuccess={async (decodedText) => {
-          setIsScannerOpen(false);
-          try {
-            const res = await api.post('/api/tokens/verify-qr', { qrData: decodedText });
-            if (res.data?.valid) {
-              // We'll use a standard alert for now, you can upgrade to toast later
-              alert(res.data.message);
-            } else {
-              alert(res.data?.error || 'Check-in failed');
-            }
-          } catch (err) {
-            alert(err.response?.data?.error || 'QR Verification failed.');
-          }
-        }}
       />
     </div>
   );
