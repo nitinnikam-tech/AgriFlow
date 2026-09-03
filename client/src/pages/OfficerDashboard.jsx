@@ -3,12 +3,15 @@ import { useQueue } from '../context/QueueContext';
 import { useLanguage } from '../context/LanguageContext';
 import { api } from '../services/api';
 import { Shield, Play, CheckCircle2, Pause, Plus, QrCode, Sparkles, AlertCircle, RefreshCw, UserCheck, Scale, FileText } from 'lucide-react';
+import QrScannerModal from '../components/officer/QrScannerModal';
 
 export default function OfficerDashboard() {
   const { queueState, callNext, completeToken, toggleCounter, addCounter, resetDemoState } = useQueue();
   const { t } = useLanguage();
   const [selectedCounter, setSelectedCounter] = useState('CNT-PUN-01');
   const [isQualityModalOpen, setIsQualityModalOpen] = useState(false);
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [scanResult, setScanResult] = useState(null);
   const [tokenToInspect, setTokenToInspect] = useState('A-109');
   const [moisture, setMoisture] = useState(11.8);
   const [weight, setWeight] = useState(520);
@@ -69,6 +72,13 @@ export default function OfficerDashboard() {
           </div>
 
           <div className="flex items-center space-x-3">
+            <button
+              onClick={() => setIsScannerOpen(true)}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-2.5 px-4 rounded-xl shadow-md transition-colors flex items-center space-x-1.5"
+            >
+              <QrCode className="w-4 h-4" />
+              <span>Scan QR</span>
+            </button>
             <button
               onClick={addCounter}
               className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2.5 px-4 rounded-xl shadow-md transition-colors flex items-center space-x-1.5"
@@ -316,6 +326,26 @@ export default function OfficerDashboard() {
           </div>
         </div>
       )}
+
+      {/* QR Scanner Modal */}
+      <QrScannerModal
+        isOpen={isScannerOpen}
+        onClose={() => setIsScannerOpen(false)}
+        onScanSuccess={async (decodedText) => {
+          setIsScannerOpen(false);
+          try {
+            const res = await api.post('/api/tokens/verify-qr', { qrData: decodedText });
+            if (res.data?.valid) {
+              // We'll use a standard alert for now, you can upgrade to toast later
+              alert(res.data.message);
+            } else {
+              alert(res.data?.error || 'Check-in failed');
+            }
+          } catch (err) {
+            alert(err.response?.data?.error || 'QR Verification failed.');
+          }
+        }}
+      />
     </div>
   );
 }

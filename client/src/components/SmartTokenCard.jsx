@@ -2,12 +2,34 @@ import React, { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useQueue } from '../context/QueueContext';
 import { useLanguage } from '../context/LanguageContext';
-import { QrCode, MapPin, CheckCircle2, Shield, Download, Smartphone, Share2 } from 'lucide-react';
+import { QrCode, MapPin, CheckCircle2, Shield, Download, Smartphone, Share2, AlertCircle } from 'lucide-react';
 
 export default function SmartTokenCard({ onOpenSlotBooking }) {
   const { heroToken } = useQueue();
   const { t } = useLanguage();
   const [showQrModal, setShowQrModal] = useState(false);
+  
+  const [geoStatus, setGeoStatus] = useState('CHECKING'); // CHECKING, INSIDE, OUTSIDE, DENIED
+  const [distance, setDistance] = useState(0);
+
+  React.useEffect(() => {
+    if (!navigator.geolocation) {
+      setGeoStatus('DENIED');
+      return;
+    }
+    
+    // Check if permission is already granted/denied to avoid prompting immediately if we don't want to
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        // Mock distance calculation for demo
+        setDistance(420);
+        setGeoStatus('INSIDE');
+      },
+      (error) => {
+        setGeoStatus('DENIED');
+      }
+    );
+  }, []);
 
   const qrData = heroToken?.qrCodeData || JSON.stringify({ token: 'A-127', centre: 'PC-PUNE-01', farmer: 'FMR-1002' });
 
@@ -68,18 +90,39 @@ export default function SmartTokenCard({ onOpenSlotBooking }) {
         </div>
 
         {/* Geofence Radar Status */}
-        <div className="mt-4 p-3 rounded-xl bg-emerald-50/80 border border-emerald-200/80 flex items-center justify-between text-xs">
-          <div className="flex items-center space-x-2">
-            <MapPin className="w-4 h-4 text-emerald-600 shrink-0" />
-            <div>
-              <span className="font-bold text-emerald-900">{t('verifiedGeofence')}</span>
-              <p className="text-[11px] text-emerald-700">Distance: 420m from Pune APMC Mandi yard</p>
-            </div>
+        {geoStatus === 'CHECKING' && (
+          <div className="mt-4 p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs animate-pulse">
+            <span className="text-slate-500 font-semibold">Acquiring GPS location...</span>
           </div>
-          <span className="bg-emerald-200 text-emerald-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
-            ELIGIBLE
-          </span>
-        </div>
+        )}
+        {geoStatus === 'INSIDE' && (
+          <div className="mt-4 p-3 rounded-xl bg-emerald-50/80 border border-emerald-200/80 flex items-center justify-between text-xs">
+            <div className="flex items-center space-x-2">
+              <MapPin className="w-4 h-4 text-emerald-600 shrink-0" />
+              <div>
+                <span className="font-bold text-emerald-900">{t('verifiedGeofence')}</span>
+                <p className="text-[11px] text-emerald-700">Distance: {distance}m from Pune APMC Mandi yard</p>
+              </div>
+            </div>
+            <span className="bg-emerald-200 text-emerald-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+              ELIGIBLE
+            </span>
+          </div>
+        )}
+        {geoStatus === 'DENIED' && (
+          <div className="mt-4 p-3 rounded-xl bg-amber-50/80 border border-amber-200/80 flex items-center justify-between text-xs">
+            <div className="flex items-center space-x-2">
+              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+              <div>
+                <span className="font-bold text-amber-900">Location Unavailable</span>
+                <p className="text-[11px] text-amber-700">Demo mode active. Proceed to Officer Desk.</p>
+              </div>
+            </div>
+            <button onClick={() => setGeoStatus('INSIDE')} className="bg-amber-200 hover:bg-amber-300 text-amber-900 text-[10px] font-extrabold px-2 py-1 rounded-full transition-colors">
+              MOCK LOCATION
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Action Buttons */}

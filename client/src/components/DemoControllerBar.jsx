@@ -19,20 +19,30 @@ export default function DemoControllerBar() {
   const [isExpanded, setIsExpanded] = useState(true);
 
   const scenarioSteps = [
-    { step: 1, label: '1. Baseline', desc: 'Hero Farmer A-127 (18 ahead, ETA 32m)' },
-    { step: 2, label: '2. Token Completed', desc: 'Officer completes A-109 -> Real-time sync (17 ahead, ETA 29m)' },
-    { step: 3, label: '3. Congestion Spike', desc: 'Sudden arrivals spike -> AI detects HIGH congestion (ETA 48m)' },
-    { step: 4, label: '4. Dynamic Slot Rebalance', desc: 'System shifts 8 farmers -> Capacity normalized 86% to 61%' },
-    { step: 5, label: '5. Activate Counter 5', desc: 'Official enables Counter 5 -> ETA drops to 19m (Arrival 10:38 AM)' }
+    { step: 1, label: '1. Baseline', desc: 'Hero Token Booked (Arrival Window Open)' },
+    { step: 2, label: '2. QR Check-In', desc: 'Farmer arrives. Officer scans A-127 QR -> Joins Live Queue' },
+    { step: 3, label: '3. Token Completed', desc: 'Officer completes A-109 -> Real-time sync (17 ahead, ETA 29m)' },
+    { step: 4, label: '4. Congestion Spike', desc: 'Sudden arrivals spike -> AI detects HIGH congestion (ETA 48m)' },
+    { step: 5, label: '5. Dynamic Rebalance', desc: 'System shifts 8 farmers -> Capacity normalized 86% to 61%' },
+    { step: 6, label: '6. Activate Counter 5', desc: 'Official enables Counter 5 -> ETA drops to 19m' }
   ];
 
-  const handleStepClick = (s) => {
+  const handleStepClick = async (s) => {
     setDemoStep(s);
     if (s === 1) resetDemoState();
-    else if (s === 2) completeToken('CNT-PUN-01', 'A-109');
-    else if (s === 3) triggerCongestionSpike();
-    else if (s === 4) applySlotOptimization();
-    else if (s === 5) addCounter();
+    else if (s === 2) {
+      try {
+        const { api } = await import('../services/api');
+        await api.post('/api/tokens/verify-qr', { qrData: JSON.stringify({ token: 'A-127' }) });
+        // The socket broadcast will automatically update the frontend context
+      } catch (err) {
+        console.error('Check-in failed in demo', err);
+      }
+    }
+    else if (s === 3) completeToken('CNT-PUN-01', 'A-109');
+    else if (s === 4) triggerCongestionSpike();
+    else if (s === 5) applySlotOptimization();
+    else if (s === 6) addCounter();
   };
 
   return (
@@ -78,7 +88,7 @@ export default function DemoControllerBar() {
 
       {/* Expanded Quick Action Buttons */}
       {isExpanded && (
-        <div className="mt-3 pt-3 border-t border-slate-800 grid grid-cols-2 sm:grid-cols-5 gap-2">
+        <div className="mt-3 pt-3 border-t border-slate-800 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
           {scenarioSteps.map((s) => (
             <button
               key={s.step}

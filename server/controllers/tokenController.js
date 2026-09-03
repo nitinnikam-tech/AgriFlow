@@ -1,6 +1,8 @@
 import { repository as dualModeStore } from '../repositories/index.js';
 import { QueueIntelligenceService } from '../services/queueIntelligence.js';
 import { TOKEN_STATUS, CONGESTION_LEVELS } from '../config/constants.js';
+import { broadcastCentreAndFarmerUpdates } from '../socket/socketHandler.js';
+import { NotificationService } from '../services/NotificationService.js';
 
 export const tokenController = {
   getTokenByNumber: async (req, res) => {
@@ -128,19 +130,53 @@ export const tokenController = {
       return res.status(404).json({ valid: false, error: 'Token not found in registry' });
     }
 
-    if (token.status === TOKEN_STATUS.BOOKED || token.status === TOKEN_STATUS.WAITING) {
+    if (req.user && req.user.centreId && token.centreId !== req.user.centreId) {
+      return res.status(403).json({ valid: false, error: 'Token belongs to a different procurement centre.' });
+    }
+
+    if (token.status === TOKEN_STATUS.CANCELLED) {
+      return res.status(400).json({ valid: false, error: 'Token is cancelled.' });
+    }
+
+    if (token.status === TOKEN_STATUS.COMPLETED || token.status === TOKEN_STATUS.PROCURED) {
+      return res.status(400).json({ valid: false, error: 'Token is already completed.' });
+    }
+
+    const checkInStep = token.procurementTimeline?.find(s => s.stage === 'CHECKED_IN');
+    if (token.status === TOKEN_STATUS.WAITING || (checkInStep && checkInStep.isCompleted)) {
+      return res.status(400).json({ valid: false, error: 'Farmer is already checked in.' });
+    }
+
+    if (token.status === TOKEN_STATUS.BOOKED) {
       token.status = TOKEN_STATUS.WAITING;
-      const checkInStep = token.procurementTimeline?.find(s => s.stage === 'CHECKED_IN');
       if (checkInStep) {
         checkInStep.isCompleted = true;
         checkInStep.timestamp = scannedAt || new Date().toISOString();
       }
+      await dualModeStore.saveToken(tokenNumber, token);
+      
+      // Notify Farmer of check-in
+      await NotificationService.sendFarmerNotification(token.farmerId, {
+        title: 'Check-In Successful dYZ',
+        body: `You are now in the live queue at Pune APMC Mandi. Token: ${tokenNumber}.`,
+        type: 'SUCCESS',
+        channel: 'ALL'
+      });
+    }
+
+    // Recalculate ETA and send broadcast
+    const eta = await QueueIntelligenceService.calculateFarmerETA(tokenNumber, token.centreId);
+    
+    // Emit real-time update
+    if (req.app.get('io')) {
+      await broadcastCentreAndFarmerUpdates(req.app.get('io'), token.centreId, tokenNumber, `Farmer ${token.farmerName} checked in.`);
     }
 
     return res.json({
       valid: true,
       message: `QR Verified. Farmer ${token.farmerName} checked in successfully.`,
-      token
+      token,
+      eta
     });
   }
 };

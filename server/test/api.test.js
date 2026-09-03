@@ -18,7 +18,7 @@ try {
   const token = await dualModeStore.getToken('A-127');
   assert.ok(token, 'Hero Token A-127 must exist');
   assert.strictEqual(token.cropType, 'WHEAT', 'Token crop must be Wheat');
-  assert.strictEqual(token.status, TOKEN_STATUS.WAITING, 'Token status must be WAITING');
+  assert.strictEqual(token.status, TOKEN_STATUS.BOOKED, 'Token status must be BOOKED');
   console.log('✅ Test 2: Hero Token A-127 Baseline Passed');
 
   // Test 3: Queue Telemetry Calculation

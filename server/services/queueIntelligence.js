@@ -53,13 +53,12 @@ export class QueueIntelligenceService {
     const avgProcTime = queueState.avgProcessingTimeMin;
 
     let peopleAhead = 0;
-    if (token.status === TOKEN_STATUS.WAITING) {
+    if (token.status === TOKEN_STATUS.WAITING || token.status === TOKEN_STATUS.BOOKED) {
+      // Find all waiting tokens that have a queue position ahead of this token
       const allWaiting = Array.from((await dualModeStore.getAllTokens()))
-        .filter(t => t.centreId === centreId && t.status === TOKEN_STATUS.WAITING)
-        .sort((a, b) => a.queuePosition - b.queuePosition);
+        .filter(t => t.centreId === centreId && t.status === TOKEN_STATUS.WAITING);
       
-      const indexInWaiting = allWaiting.findIndex(t => t.tokenNumber === tokenNumber);
-      const waitingAhead = indexInWaiting >= 0 ? indexInWaiting : 0;
+      const waitingAhead = allWaiting.filter(t => t.queuePosition < token.queuePosition).length;
       peopleAhead = waitingAhead + queueState.processingCount;
     } else if (token.status === TOKEN_STATUS.PROCESSING) {
       peopleAhead = 0;
