@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { api } from '../services/api';
+import { disconnectSocket, reconnectSocket } from '../services/socket';
 
 const AuthContext = createContext();
 
@@ -37,6 +38,7 @@ export function AuthProvider({ children }) {
     setToken(jwtToken);
     setUser(userData);
     setActiveRole(userData.role);
+    reconnectSocket(jwtToken);
   };
 
   const logout = () => {
@@ -44,6 +46,7 @@ export function AuthProvider({ children }) {
     setToken(null);
     setUser(null);
     setActiveRole(null);
+    disconnectSocket();
   };
 
   // Demo switcher for SIH presentation: performs real auth under the hood

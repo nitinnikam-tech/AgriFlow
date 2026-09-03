@@ -26,6 +26,15 @@ export function setupSocketHandlers(io) {
   });
 
   io.on('connection', (socket) => {
+    const checkRole = (socket, allowedRoles, eventName) => {
+      if (!socket.user || !allowedRoles.includes(socket.user.role)) {
+        console.warn(`[Security] Unauthorized socket action '${eventName}' from user ${socket.user?.sub || 'anonymous'} (Role: ${socket.user?.role || 'none'})`);
+        socket.emit('toast:error', { message: `Unauthorized action: ${eventName}` });
+        return false;
+      }
+      return true;
+    };
+
     socket.on('join:centre', (centreId = 'PC-PUNE-01') => {
       socket.join(`centre:${centreId}`);
       const queueState = QueueIntelligenceService.getCentreQueueState(centreId);
@@ -39,6 +48,8 @@ export function setupSocketHandlers(io) {
     });
 
     socket.on('token:call_next', ({ counterId, centreId = 'PC-PUNE-01' }) => {
+      if (!checkRole(socket, [USER_ROLES.OFFICER, USER_ROLES.CENTRE_ADMIN, USER_ROLES.SYSTEM_ADMIN], 'token:call_next')) return;
+
       const counter = dualModeStore.counters.get(counterId);
       if (!counter) return;
 
@@ -59,6 +70,8 @@ export function setupSocketHandlers(io) {
     });
 
     socket.on('token:complete', ({ counterId, tokenNumber, centreId = 'PC-PUNE-01' }) => {
+      if (!checkRole(socket, [USER_ROLES.OFFICER, USER_ROLES.CENTRE_ADMIN, USER_ROLES.SYSTEM_ADMIN], 'token:complete')) return;
+
       const counter = dualModeStore.counters.get(counterId);
       const token = dualModeStore.getToken(tokenNumber);
 
@@ -93,6 +106,8 @@ export function setupSocketHandlers(io) {
     });
 
     socket.on('counter:toggle', ({ counterId, centreId = 'PC-PUNE-01' }) => {
+      if (!checkRole(socket, [USER_ROLES.OFFICER, USER_ROLES.CENTRE_ADMIN, USER_ROLES.SYSTEM_ADMIN], 'counter:toggle')) return;
+
       const counter = dualModeStore.counters.get(counterId);
       if (counter) {
         if (counter.status === 'PROCESSING') {
@@ -108,6 +123,8 @@ export function setupSocketHandlers(io) {
     });
 
     socket.on('counter:add', ({ centreId = 'PC-PUNE-01' }) => {
+      if (!checkRole(socket, [USER_ROLES.OFFICER, USER_ROLES.CENTRE_ADMIN, USER_ROLES.SYSTEM_ADMIN], 'counter:add')) return;
+
       const counters = dualModeStore.getCountersByCentre(centreId);
       const idleOrInactive = counters.find(c => c.status === 'IDLE' || c.status === 'INACTIVE');
       if (idleOrInactive) {
@@ -130,6 +147,8 @@ export function setupSocketHandlers(io) {
     });
 
     socket.on('demo:trigger_spike', ({ centreId = 'PC-PUNE-01' }) => {
+      if (!checkRole(socket, [USER_ROLES.CENTRE_ADMIN, USER_ROLES.DISTRICT_ADMIN, USER_ROLES.SYSTEM_ADMIN], 'demo:trigger_spike')) return;
+
       dualModeStore.isSimulatingCongestion = true;
       const heroToken = dualModeStore.getToken('A-127');
       if (heroToken) {
@@ -146,6 +165,8 @@ export function setupSocketHandlers(io) {
     });
 
     socket.on('demo:optimize', ({ centreId = 'PC-PUNE-01' }) => {
+      if (!checkRole(socket, [USER_ROLES.CENTRE_ADMIN, USER_ROLES.DISTRICT_ADMIN, USER_ROLES.SYSTEM_ADMIN], 'demo:optimize')) return;
+
       SlotOptimizerService.applyOptimization(centreId);
       const heroToken = dualModeStore.getToken('A-127');
       if (heroToken) {
@@ -162,6 +183,8 @@ export function setupSocketHandlers(io) {
     });
 
     socket.on('demo:reset', () => {
+      if (!checkRole(socket, [USER_ROLES.CENTRE_ADMIN, USER_ROLES.DISTRICT_ADMIN, USER_ROLES.SYSTEM_ADMIN], 'demo:reset')) return;
+
       dualModeStore.initSeedData();
       broadcastCentreAndFarmerUpdates(io, 'PC-PUNE-01', 'A-127', 'Demo simulation reset to initial baseline.');
     });
