@@ -2,16 +2,16 @@ import { QueueIntelligenceService } from '../services/queueIntelligence.js';
 import { AIInferenceService } from '../services/aiInferenceService.js';
 
 export const queueController = {
-  getLiveQueue: (req, res) => {
+  getLiveQueue: async (req, res) => {
     const { centreId = 'PC-PUNE-01' } = req.query;
-    const queueState = QueueIntelligenceService.getCentreQueueState(centreId);
+    const queueState = await QueueIntelligenceService.getCentreQueueState(centreId);
     return res.json({ success: true, ...queueState });
   },
 
   getFarmerETA: async (req, res) => {
     const { tokenNumber } = req.params;
     const { centreId = 'PC-PUNE-01' } = req.query;
-    const eta = QueueIntelligenceService.calculateFarmerETA(tokenNumber, centreId);
+    const eta = await QueueIntelligenceService.calculateFarmerETA(tokenNumber, centreId);
     if (!eta) return res.status(404).json({ error: 'Token not found' });
 
     // Enhance with AI explainability

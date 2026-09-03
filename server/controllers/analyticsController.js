@@ -1,10 +1,10 @@
-import { dualModeStore } from '../utils/dualModeStore.js';
+import { repository as dualModeStore } from '../repositories/index.js';
 import { QueueIntelligenceService } from '../services/queueIntelligence.js';
 
 export const analyticsController = {
-  getCentreDashboardStats: (req, res) => {
+  getCentreDashboardStats: async (req, res) => {
     const { centreId = 'PC-PUNE-01' } = req.query;
-    const queueState = QueueIntelligenceService.getCentreQueueState(centreId);
+    const queueState = await QueueIntelligenceService.getCentreQueueState(centreId);
 
     const hourlyArrivals = [
       { hour: '08:00', arrivals: 22, processed: 18, avgWaitMin: 12 },

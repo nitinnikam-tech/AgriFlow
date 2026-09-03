@@ -1,24 +1,24 @@
-﻿import { dualModeStore } from '../utils/dualModeStore.js';
+﻿import { repository as dualModeStore } from '../repositories/index.js';
 import { QueueIntelligenceService } from '../services/queueIntelligence.js';
 
 export const centreController = {
-  getAllCentres: (req, res) => {
-    const centres = dualModeStore.getAllCentres();
+  getAllCentres: async (req, res) => {
+    const centres = await dualModeStore.getAllCentres();
     return res.json({ success: true, centres });
   },
 
-  getCentreById: (req, res) => {
+  getCentreById: async (req, res) => {
     const { id } = req.params;
-    const centre = dualModeStore.getCentre(id);
+    const centre = await dualModeStore.getCentre(id);
     if (!centre) return res.status(404).json({ error: 'Centre not found' });
-    const queueState = QueueIntelligenceService.getCentreQueueState(id);
+    const queueState = await QueueIntelligenceService.getCentreQueueState(id);
     return res.json({ success: true, centre, queueState });
   },
 
-  getDigitalTwinTelemetry: (req, res) => {
+  getDigitalTwinTelemetry: async (req, res) => {
     const { id } = req.params;
     const centreId = id || 'PC-PUNE-01';
-    const queueState = QueueIntelligenceService.getCentreQueueState(centreId);
+    const queueState = await QueueIntelligenceService.getCentreQueueState(centreId);
 
     const zones = [
       { id: 'ZONE_ENTRY', name: 'Mandi Main Entry & Security', occupancy: 8, maxCapacity: 25, status: 'NORMAL', avgTimeMin: 1.5 },
@@ -41,7 +41,7 @@ export const centreController = {
     });
   },
 
-  getCrowdForecast: (req, res) => {
+  getCrowdForecast: async (req, res) => {
     const { id } = req.params;
     const centreId = id || 'PC-PUNE-01';
 

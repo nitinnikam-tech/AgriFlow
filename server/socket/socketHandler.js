@@ -1,4 +1,4 @@
-import { dualModeStore } from '../utils/dualModeStore.js';
+import { repository as dualModeStore } from '../repositories/index.js';
 import { QueueIntelligenceService } from '../services/queueIntelligence.js';
 import { SlotOptimizerService } from '../services/slotOptimizer.js';
 import { NotificationService } from '../services/notificationService.js';
@@ -35,25 +35,25 @@ export function setupSocketHandlers(io) {
       return true;
     };
 
-    socket.on('join:centre', (centreId = 'PC-PUNE-01') => {
+    socket.on('join:centre', async (centreId = 'PC-PUNE-01') => {
       socket.join(`centre:${centreId}`);
-      const queueState = QueueIntelligenceService.getCentreQueueState(centreId);
+      const queueState = await QueueIntelligenceService.getCentreQueueState(centreId);
       socket.emit('queue:update', queueState);
     });
 
-    socket.on('join:farmer', ({ tokenNumber, centreId = 'PC-PUNE-01' }) => {
+    socket.on('join:farmer', async ({ tokenNumber, centreId = 'PC-PUNE-01' }) => {
       socket.join(`farmer:${tokenNumber}`);
-      const eta = QueueIntelligenceService.calculateFarmerETA(tokenNumber, centreId);
+      const eta = await QueueIntelligenceService.calculateFarmerETA(tokenNumber, centreId);
       socket.emit('eta:update', eta);
     });
 
-    socket.on('token:call_next', ({ counterId, centreId = 'PC-PUNE-01' }) => {
+    socket.on('token:call_next', async ({ counterId, centreId = 'PC-PUNE-01' }) => {
       if (!checkRole(socket, [USER_ROLES.OFFICER, USER_ROLES.CENTRE_ADMIN, USER_ROLES.SYSTEM_ADMIN], 'token:call_next')) return;
 
-      const counter = dualModeStore.counters.get(counterId);
+      const counter = await dualModeStore.getCounter(counterId);
       if (!counter) return;
 
-      const allWaiting = Array.from(dualModeStore.tokens.values())
+      const allWaiting = Array.from((await dualModeStore.getAllTokens()))
         .filter(t => t.centreId === centreId && t.status === TOKEN_STATUS.WAITING)
         .sort((a, b) => a.queuePosition - b.queuePosition);
 
@@ -69,11 +69,11 @@ export function setupSocketHandlers(io) {
       }
     });
 
-    socket.on('token:complete', ({ counterId, tokenNumber, centreId = 'PC-PUNE-01' }) => {
+    socket.on('token:complete', async ({ counterId, tokenNumber, centreId = 'PC-PUNE-01' }) => {
       if (!checkRole(socket, [USER_ROLES.OFFICER, USER_ROLES.CENTRE_ADMIN, USER_ROLES.SYSTEM_ADMIN], 'token:complete')) return;
 
-      const counter = dualModeStore.counters.get(counterId);
-      const token = dualModeStore.getToken(tokenNumber);
+      const counter = await dualModeStore.getCounter(counterId);
+      const token = await dualModeStore.getToken(tokenNumber);
 
       if (token) {
         token.status = TOKEN_STATUS.COMPLETED;
@@ -94,21 +94,21 @@ export function setupSocketHandlers(io) {
         counter.status = 'IDLE';
       }
 
-      const heroToken = dualModeStore.getToken('A-127');
+      const heroToken = await dualModeStore.getToken('A-127');
       if (heroToken && heroToken.status === TOKEN_STATUS.WAITING) {
         if (heroToken.peopleAhead > 1) {
           heroToken.peopleAhead -= 1;
-          heroToken.estimatedWaitMin = Math.max(1, Math.round((heroToken.peopleAhead * 5.8) / (QueueIntelligenceService.getCentreQueueState(centreId).activeCountersCount || 4)));
+          heroToken.estimatedWaitMin = Math.max(1, Math.round((heroToken.peopleAhead * 5.8) / (await QueueIntelligenceService.getCentreQueueState(centreId).activeCountersCount || 4)));
         }
       }
 
       broadcastCentreAndFarmerUpdates(io, centreId, tokenNumber, `Token ${tokenNumber} processing completed.`);
     });
 
-    socket.on('counter:toggle', ({ counterId, centreId = 'PC-PUNE-01' }) => {
+    socket.on('counter:toggle', async ({ counterId, centreId = 'PC-PUNE-01' }) => {
       if (!checkRole(socket, [USER_ROLES.OFFICER, USER_ROLES.CENTRE_ADMIN, USER_ROLES.SYSTEM_ADMIN], 'counter:toggle')) return;
 
-      const counter = dualModeStore.counters.get(counterId);
+      const counter = await dualModeStore.getCounter(counterId);
       if (counter) {
         if (counter.status === 'PROCESSING') {
           counter.status = 'PAUSED';
@@ -122,18 +122,18 @@ export function setupSocketHandlers(io) {
       }
     });
 
-    socket.on('counter:add', ({ centreId = 'PC-PUNE-01' }) => {
+    socket.on('counter:add', async ({ centreId = 'PC-PUNE-01' }) => {
       if (!checkRole(socket, [USER_ROLES.OFFICER, USER_ROLES.CENTRE_ADMIN, USER_ROLES.SYSTEM_ADMIN], 'counter:add')) return;
 
-      const counters = dualModeStore.getCountersByCentre(centreId);
+      const counters = await dualModeStore.getCountersByCentre(centreId);
       const idleOrInactive = counters.find(c => c.status === 'IDLE' || c.status === 'INACTIVE');
       if (idleOrInactive) {
         idleOrInactive.status = 'PROCESSING';
         idleOrInactive.currentToken = 'A-113';
-        const tok113 = dualModeStore.getToken('A-113');
+        const tok113 = await dualModeStore.getToken('A-113');
         if (tok113) tok113.status = TOKEN_STATUS.PROCESSING;
 
-        const heroToken = dualModeStore.getToken('A-127');
+        const heroToken = await dualModeStore.getToken('A-127');
         if (heroToken) {
           heroToken.activeCounters = 5;
           heroToken.estimatedWaitMin = 19;
@@ -141,16 +141,23 @@ export function setupSocketHandlers(io) {
           heroToken.predictedCongestion = CONGESTION_LEVELS.MEDIUM;
           NotificationService.broadcastQueueImprovement(centreId, '10:38 AM');
         }
+        if (heroToken && heroToken.status === TOKEN_STATUS.WAITING) {
+          if (heroToken.peopleAhead > 1) {
+            heroToken.peopleAhead -= 1;
+            const qState = await QueueIntelligenceService.getCentreQueueState(centreId);
+            heroToken.estimatedWaitMin = Math.max(1, Math.round((heroToken.peopleAhead * 5.8) / (qState.activeCountersCount || 4)));
+          }
+        }
 
-        broadcastCentreAndFarmerUpdates(io, centreId, 'A-127', 'Counter 5 activated! Queue wait time reduced.');
+        await broadcastCentreAndFarmerUpdates(io, centreId, 'A-127', 'Counter 5 activated! Queue wait time reduced.');
       }
     });
 
-    socket.on('demo:trigger_spike', ({ centreId = 'PC-PUNE-01' }) => {
+    socket.on('demo:trigger_spike', async ({ centreId = 'PC-PUNE-01' }) => {
       if (!checkRole(socket, [USER_ROLES.CENTRE_ADMIN, USER_ROLES.DISTRICT_ADMIN, USER_ROLES.SYSTEM_ADMIN], 'demo:trigger_spike')) return;
 
-      dualModeStore.isSimulatingCongestion = true;
-      const heroToken = dualModeStore.getToken('A-127');
+      await dualModeStore.setIsSimulatingCongestion(true);
+      const heroToken = await dualModeStore.getToken('A-127');
       if (heroToken) {
         heroToken.predictedCongestion = CONGESTION_LEVELS.HIGH;
         heroToken.estimatedWaitMin = 48;
@@ -161,14 +168,14 @@ export function setupSocketHandlers(io) {
           channel: 'ALL'
         });
       }
-      broadcastCentreAndFarmerUpdates(io, centreId, 'A-127', 'Congestion spike simulated!');
+      await broadcastCentreAndFarmerUpdates(io, centreId, 'A-127', 'Congestion spike simulated!');
     });
 
-    socket.on('demo:optimize', ({ centreId = 'PC-PUNE-01' }) => {
+    socket.on('demo:optimize', async ({ centreId = 'PC-PUNE-01' }) => {
       if (!checkRole(socket, [USER_ROLES.CENTRE_ADMIN, USER_ROLES.DISTRICT_ADMIN, USER_ROLES.SYSTEM_ADMIN], 'demo:optimize')) return;
 
-      SlotOptimizerService.applyOptimization(centreId);
-      const heroToken = dualModeStore.getToken('A-127');
+      await SlotOptimizerService.applyOptimization(centreId);
+      const heroToken = await dualModeStore.getToken('A-127');
       if (heroToken) {
         heroToken.predictedCongestion = CONGESTION_LEVELS.LOW;
         heroToken.estimatedWaitMin = 21;
@@ -179,30 +186,30 @@ export function setupSocketHandlers(io) {
           channel: 'ALL'
         });
       }
-      broadcastCentreAndFarmerUpdates(io, centreId, 'A-127', 'Queue optimization applied.');
+      await broadcastCentreAndFarmerUpdates(io, centreId, 'A-127', 'Queue optimization applied.');
     });
 
-    socket.on('demo:reset', () => {
+    socket.on('demo:reset', async () => {
       if (!checkRole(socket, [USER_ROLES.CENTRE_ADMIN, USER_ROLES.DISTRICT_ADMIN, USER_ROLES.SYSTEM_ADMIN], 'demo:reset')) return;
 
-      dualModeStore.initSeedData();
-      broadcastCentreAndFarmerUpdates(io, 'PC-PUNE-01', 'A-127', 'Demo simulation reset to initial baseline.');
+      await dualModeStore.initSeedData();
+      await broadcastCentreAndFarmerUpdates(io, 'PC-PUNE-01', 'A-127', 'Demo simulation reset to initial baseline.');
     });
   });
 }
 
-export function broadcastCentreAndFarmerUpdates(io, centreId = 'PC-PUNE-01', targetTokenNumber = 'A-127', toastMessage = null) {
-  const queueState = QueueIntelligenceService.getCentreQueueState(centreId);
+export async function broadcastCentreAndFarmerUpdates(io, centreId = 'PC-PUNE-01', targetTokenNumber = 'A-127', toastMessage = null) {
+  const queueState = await QueueIntelligenceService.getCentreQueueState(centreId);
   io.to(`centre:${centreId}`).emit('queue:update', {
     ...queueState,
     toastMessage
   });
 
-  const heroTokenNumber = targetTokenNumber || 'A-127';
-  const eta = QueueIntelligenceService.calculateFarmerETA(heroTokenNumber, centreId);
-  const heroToken = dualModeStore.getToken(heroTokenNumber);
-
-  io.to(`farmer:${heroTokenNumber}`).emit('eta:update', eta);
-  io.to(`farmer:${heroTokenNumber}`).emit('token:update', heroToken);
-  io.emit('global:telemetry', { queueState, eta });
+  const heroToken = await dualModeStore.getToken(targetTokenNumber);
+  if (heroToken) {
+    const eta = await QueueIntelligenceService.calculateFarmerETA(targetTokenNumber, centreId);
+    io.to(`farmer:${targetTokenNumber}`).emit('eta:update', eta);
+    io.to(`farmer:${targetTokenNumber}`).emit('token:update', heroToken);
+  }
+  io.emit('global:telemetry', { queueState });
 }

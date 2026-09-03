@@ -1,9 +1,9 @@
-import { dualModeStore } from '../utils/dualModeStore.js';
+import { repository as dualModeStore } from '../repositories/index.js';
 import { CONGESTION_LEVELS } from '../config/constants.js';
 
 export class SlotOptimizerService {
-  static getOptimizationProposal(centreId = 'PC-PUNE-01') {
-    const slots = dualModeStore.getSlotsByCentre(centreId);
+  static async getOptimizationProposal(centreId = 'PC-PUNE-01') {
+    const slots = await dualModeStore.getSlotsByCentre(centreId);
     
     // Find overloaded slots
     const overloadedSlots = slots.filter(s => (s.bookedCount / s.maxCapacity) >= 0.8 || s.congestion === CONGESTION_LEVELS.HIGH);
@@ -42,10 +42,10 @@ export class SlotOptimizerService {
     };
   }
 
-  static applyOptimization(centreId = 'PC-PUNE-01') {
-    const proposal = this.getOptimizationProposal(centreId);
+  static async applyOptimization(centreId = 'PC-PUNE-01') {
+    const proposal = await this.getOptimizationProposal(centreId);
     // Mark congestion normalized in store
-    dualModeStore.isSimulatingCongestion = false;
+    await dualModeStore.setIsSimulatingCongestion(false);
     return {
       success: true,
       message: 'Queue dynamically optimized. Slot load rebalanced across active counters.',

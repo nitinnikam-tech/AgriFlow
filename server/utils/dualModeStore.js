@@ -336,14 +336,37 @@ class DualModeStore {
 
   getCentre(id) { return this.centres.get(id) || this.centres.get('PC-PUNE-01'); }
   getAllCentres() { return Array.from(this.centres.values()); }
-  getCountersByCentre(centreId) {
-    return Array.from(this.counters.values()).filter(c => c.centreId === centreId);
-  }
-  getSlotsByCentre(centreId) {
-    return Array.from(this.slots.values()).filter(s => s.centreId === centreId);
-  }
+  saveCentre(centreData) { this.centres.set(centreData.id, centreData); return centreData; }
+
+  getCountersByCentre(centreId) { return Array.from(this.counters.values()).filter(c => c.centreId === centreId); }
+  getCounter(counterId) { return this.counters.get(counterId); }
+  saveCounter(counterId, counterData) { this.counters.set(counterId, counterData); return counterData; }
+
+  getSlotsByCentre(centreId) { return Array.from(this.slots.values()).filter(s => s.centreId === centreId); }
+  getSlot(slotId) { return this.slots.get(slotId); }
+  saveSlot(slotId, slotData) { this.slots.set(slotId, slotData); return slotData; }
+
   getToken(tokenNumber) { return this.tokens.get(tokenNumber); }
+  getTokensByCentre(centreId) { return Array.from(this.tokens.values()).filter(t => t.centreId === centreId); }
+  saveToken(tokenNumber, tokenData) { this.tokens.set(tokenNumber, tokenData); return tokenData; }
+  getTokensCount() { return this.tokens.size; }
+  getAllTokens() { return Array.from(this.tokens.values()); }
+
   getFarmer(id) { return this.farmers.get(id); }
+  saveFarmer(farmerData) { this.farmers.set(farmerData.id, farmerData); return farmerData; }
+
+  getUserByEmail(email) { return this.users.get(email); }
+  saveUser(userData) { this.users.set(userData.email, userData); return userData; }
+  getAllUsers() { return Array.from(this.users.values()); }
+
+  saveQualityInspection(tokenNumber, record) { this.qualityInspections.set(tokenNumber, record); return record; }
+
+  getDemoScenarioStep() { return this.demoScenarioStep; }
+  setDemoScenarioStep(step) { this.demoScenarioStep = step; }
+  
+  getIsSimulatingCongestion() { return this.isSimulatingCongestion; }
+  setIsSimulatingCongestion(value) { this.isSimulatingCongestion = value; }
+
   getFarmerNotifications(farmerId) { return this.notifications.get(farmerId) || []; }
 
   addNotification(farmerId, notification) {

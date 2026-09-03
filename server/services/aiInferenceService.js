@@ -1,4 +1,4 @@
-import { dualModeStore } from '../utils/dualModeStore.js';
+import { repository as dualModeStore } from '../repositories/index.js';
 import { QueueIntelligenceService } from './queueIntelligence.js';
 import { CONGESTION_LEVELS } from '../config/constants.js';
 
@@ -55,7 +55,7 @@ export class AIInferenceService {
 
     return {
       predictedWaitMinutes: Math.max(2, predictedMinutes),
-      confidencePercent: dualModeStore.isSimulatingCongestion ? 84 : 92,
+      confidencePercent: (await dualModeStore.getIsSimulatingCongestion()) ? 84 : 92,
       crowdForecast,
       recommendedArrivalBufferMin: 8,
       source: 'EMBEDDED_EXPLAINABLE_ML_ENGINE',

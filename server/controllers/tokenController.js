@@ -1,14 +1,14 @@
-import { dualModeStore } from '../utils/dualModeStore.js';
+import { repository as dualModeStore } from '../repositories/index.js';
 import { QueueIntelligenceService } from '../services/queueIntelligence.js';
 import { TOKEN_STATUS, CONGESTION_LEVELS } from '../config/constants.js';
 
 export const tokenController = {
-  getTokenByNumber: (req, res) => {
+  getTokenByNumber: async (req, res) => {
     const { tokenNumber } = req.params;
-    const token = dualModeStore.getToken(tokenNumber);
+    const token = await dualModeStore.getToken(tokenNumber);
     if (!token) return res.status(404).json({ error: 'Token not found' });
 
-    const eta = QueueIntelligenceService.calculateFarmerETA(tokenNumber, token.centreId);
+    const eta = await QueueIntelligenceService.calculateFarmerETA(tokenNumber, token.centreId);
     return res.json({
       success: true,
       token,
@@ -16,7 +16,7 @@ export const tokenController = {
     });
   },
 
-  bookSmartSlotToken: (req, res) => {
+  bookSmartSlotToken: async (req, res) => {
     const {
       farmerId = 'FMR-1002',
       centreId = 'PC-PUNE-01',
@@ -25,24 +25,24 @@ export const tokenController = {
       slotId = 'SLOT-1030'
     } = req.body;
 
-    const slot = dualModeStore.slots.get(slotId) || { timeWindow: '10:30 AM - 11:00 AM' };
-    const centre = dualModeStore.getCentre(centreId);
-    const farmer = dualModeStore.getFarmer(farmerId) || { name: 'Ramesh Patil', phone: '9876543210' };
+    const slot = await dualModeStore.getSlot(slotId) || { timeWindow: '10:30 AM - 11:00 AM' };
+    const centre = await dualModeStore.getCentre(centreId);
+    const farmer = await dualModeStore.getFarmer(farmerId) || { name: 'Ramesh Patil', phone: '9876543210' };
 
     // Extract highest number from existing A-### tokens to prevent collisions
-    const existingIds = Array.from(dualModeStore.tokens.keys())
+    const existingIds = Array.from((await dualModeStore.getAllTokens()).map(t => t.tokenNumber))
         .filter(k => k.startsWith('A-'))
         .map(k => parseInt(k.replace('A-', ''), 10))
         .filter(n => !isNaN(n));
     const maxId = existingIds.length > 0 ? Math.max(...existingIds) : 0;
-    let count = Math.max(dualModeStore.tokens.size + 1, maxId + 1);
+    let count = Math.max((await dualModeStore.getTokensCount()) + 1, maxId + 1);
     let tokenNumber = `A-${count}`;
-    while (dualModeStore.tokens.has(tokenNumber)) {
+    while ((await dualModeStore.getToken(tokenNumber)) != null) {
       count++;
       tokenNumber = `A-${count}`;
     }
 
-    const existingPositions = Array.from(dualModeStore.tokens.values())
+    const existingPositions = Array.from((await dualModeStore.getAllTokens()))
         .filter(t => t.centreId === centreId)
         .map(t => t.queuePosition || 0);
     const nextQueuePosition = (existingPositions.length > 0 ? Math.max(...existingPositions) : 0) + 1;
@@ -100,19 +100,19 @@ export const tokenController = {
       createdAt: new Date().toISOString()
     };
 
-    dualModeStore.tokens.set(tokenNumber, newToken);
+    await dualModeStore.saveToken(tokenNumber, newToken);
 
     // Calculate dynamic ETA and peopleAhead
-    QueueIntelligenceService.calculateFarmerETA(tokenNumber, centreId);
+    await QueueIntelligenceService.calculateFarmerETA(tokenNumber, centreId);
 
     return res.status(201).json({
       success: true,
       message: 'Smart Token generated successfully',
-      token: dualModeStore.getToken(tokenNumber)
+      token: await dualModeStore.getToken(tokenNumber)
     });
   },
 
-  verifyQrCheckIn: (req, res) => {
+  verifyQrCheckIn: async (req, res) => {
     const { qrData, scannedAt } = req.body;
     let parsed;
     try {
@@ -122,7 +122,7 @@ export const tokenController = {
     }
 
     const tokenNumber = parsed.token || 'A-127';
-    const token = dualModeStore.getToken(tokenNumber);
+    const token = await dualModeStore.getToken(tokenNumber);
 
     if (!token) {
       return res.status(404).json({ valid: false, error: 'Token not found in registry' });

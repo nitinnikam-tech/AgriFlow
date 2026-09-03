@@ -1,4 +1,4 @@
-import { dualModeStore } from '../utils/dualModeStore.js';
+import { repository as dualModeStore } from '../repositories/index.js';
 import { USER_ROLES } from '../config/constants.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
@@ -21,7 +21,7 @@ const generateToken = (user) => {
 
 export const authController = {
   // Farmer OTP Login Simulation
-  sendOtp: (req, res) => {
+  sendOtp: async (req, res) => {
     const { phone } = req.body;
     if (!phone) return res.status(400).json({ error: 'Phone number is required' });
     
@@ -35,14 +35,14 @@ export const authController = {
     });
   },
 
-  verifyOtp: (req, res) => {
+  verifyOtp: async (req, res) => {
     const { phone, otp } = req.body;
     if (otp !== '123456' && otp !== '2026') {
       return res.status(401).json({ error: 'Invalid OTP. For demo mode, please use 123456.' });
     }
 
     // Return hero farmer profile (Ramesh Patil)
-    const farmer = dualModeStore.getFarmer('FMR-1002') || {
+    const farmer = await dualModeStore.getFarmer('FMR-1002') || {
       id: 'FMR-1002',
       name: 'Ramesh Patil',
       phone: phone || '9876543210',
@@ -62,14 +62,14 @@ export const authController = {
   },
 
   // Official / Admin Login
-  officialLogin: (req, res) => {
+  officialLogin: async (req, res) => {
     const { email, password, role } = req.body;
     
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    const user = dualModeStore.users.get(email);
+    const user = await dualModeStore.getUserByEmail(email);
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
@@ -94,18 +94,18 @@ export const authController = {
     });
   },
 
-  getProfile: (req, res) => {
+  getProfile: async (req, res) => {
     if (!req.user) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
     
     if (req.user.role === USER_ROLES.FARMER) {
-      const farmer = dualModeStore.getFarmer(req.user.sub);
+      const farmer = await dualModeStore.getFarmer(req.user.sub);
       if (!farmer) return res.status(404).json({ error: 'User not found' });
       return res.json({ success: true, user: farmer });
     } else {
       let foundUser = null;
-      for (const user of dualModeStore.users.values()) {
+      for (const user of (await dualModeStore.getAllUsers())) {
         if (user.id === req.user.sub) {
           foundUser = user;
           break;

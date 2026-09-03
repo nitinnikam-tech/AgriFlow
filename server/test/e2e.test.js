@@ -103,13 +103,13 @@ async function runE2ETests() {
       auth: { token: jwtToken } 
     });
     const tid = setTimeout(() => { socket.close(); resolve({ ok: false, error: 'Connection timeout' }); }, 5000);
-    socket.on('connect', () => {
+    socket.on('connect', async () => {
       clearTimeout(tid);
       const sid = socket.id;
       socket.close();
       resolve({ ok: true, sid });
     });
-    socket.on('connect_error', (err) => { clearTimeout(tid); socket.close(); resolve({ ok: false, error: err.message }); });
+    socket.on('connect_error', async (err) => { clearTimeout(tid); socket.close(); resolve({ ok: false, error: err.message }); });
   });
   if (socketConnTest.ok) {
     pass(`Socket.IO WebSocket connected! Socket ID: ${socketConnTest.sid}`);
@@ -125,15 +125,15 @@ async function runE2ETests() {
       auth: { token: jwtToken }
     });
     const tid = setTimeout(() => { socket.close(); resolve({ ok: false, error: 'No eta:update within 5000ms' }); }, 5000);
-    socket.on('connect', () => {
+    socket.on('connect', async () => {
       socket.emit('join:farmer', { farmerId: 'FMR-1002', tokenNumber: 'A-127', centreId: 'PC-PUNE-01' });
     });
-    socket.on('eta:update', (data) => {
+    socket.on('eta:update', async (data) => {
       clearTimeout(tid);
       socket.close();
       resolve({ ok: true, data });
     });
-    socket.on('connect_error', (err) => { clearTimeout(tid); socket.close(); resolve({ ok: false, error: err.message }); });
+    socket.on('connect_error', async (err) => { clearTimeout(tid); socket.close(); resolve({ ok: false, error: err.message }); });
   });
   if (farmerRoomTest.ok) {
     const d = farmerRoomTest.data;
@@ -150,15 +150,15 @@ async function runE2ETests() {
       auth: { token: jwtToken }
     });
     const tid = setTimeout(() => { socket.close(); resolve({ ok: false, error: 'No queue:update within 5000ms' }); }, 5000);
-    socket.on('connect', () => {
+    socket.on('connect', async () => {
       socket.emit('join:centre', 'PC-PUNE-01');
     });
-    socket.on('queue:update', (data) => {
+    socket.on('queue:update', async (data) => {
       clearTimeout(tid);
       socket.close();
       resolve({ ok: true, data });
     });
-    socket.on('connect_error', (err) => { clearTimeout(tid); socket.close(); resolve({ ok: false, error: err.message }); });
+    socket.on('connect_error', async (err) => { clearTimeout(tid); socket.close(); resolve({ ok: false, error: err.message }); });
   });
   if (centreRoomTest.ok) {
     const d = centreRoomTest.data;

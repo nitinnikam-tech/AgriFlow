@@ -1,13 +1,13 @@
-import { dualModeStore } from '../utils/dualModeStore.js';
+import { repository as dualModeStore } from '../repositories/index.js';
 import { TOKEN_STATUS } from '../config/constants.js';
 
 export const paymentController = {
-  getPaymentStatus: (req, res) => {
+  getPaymentStatus: async (req, res) => {
     const { tokenNumber } = req.params;
-    const token = dualModeStore.getToken(tokenNumber);
+    const token = await dualModeStore.getToken(tokenNumber);
     if (!token) return res.status(404).json({ error: 'Token not found' });
 
-    const farmer = dualModeStore.getFarmer(token.farmerId) || {
+    const farmer = await dualModeStore.getFarmer(token.farmerId) || {
       bankDetails: { bankName: 'State Bank of India', ifsc: 'SBIN0001234', accountLast4: '7712' }
     };
 
@@ -34,9 +34,9 @@ export const paymentController = {
     });
   },
 
-  simulatePaymentCredit: (req, res) => {
+  simulatePaymentCredit: async (req, res) => {
     const { tokenNumber } = req.body;
-    const token = dualModeStore.getToken(tokenNumber);
+    const token = await dualModeStore.getToken(tokenNumber);
     if (!token) return res.status(404).json({ error: 'Token not found' });
 
     token.status = TOKEN_STATUS.PAYMENT_COMPLETED;

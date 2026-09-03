@@ -1,17 +1,17 @@
-﻿import { dualModeStore } from '../utils/dualModeStore.js';
+﻿import { repository as dualModeStore } from '../repositories/index.js';
 import { QueueIntelligenceService } from '../services/queueIntelligence.js';
 import { TOKEN_STATUS } from '../config/constants.js';
 
 export const officialController = {
-  getCounters: (req, res) => {
+  getCounters: async (req, res) => {
     const { centreId = 'PC-PUNE-01' } = req.query;
-    const counters = dualModeStore.getCountersByCentre(centreId);
+    const counters = await dualModeStore.getCountersByCentre(centreId);
     return res.json({ success: true, counters });
   },
 
-  getCounterWorkloadBalancing: (req, res) => {
+  getCounterWorkloadBalancing: async (req, res) => {
     const { centreId = 'PC-PUNE-01' } = req.query;
-    const counters = dualModeStore.getCountersByCentre(centreId);
+    const counters = await dualModeStore.getCountersByCentre(centreId);
 
     const overloaded = counters.find(c => c.utilizationPercent > 85);
     const underloaded = counters.find(c => c.status === 'PROCESSING' && c.utilizationPercent < 60);

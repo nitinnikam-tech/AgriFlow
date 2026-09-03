@@ -32,7 +32,7 @@ app.use((req, res, next) => {
 
 app.use('/api', apiRoutes);
 
-app.get('/health', (req, res) => {
+app.get('/health', async (req, res) => {
   res.json({
     status: 'HEALTHY',
     service: 'AgriFlow Backend & Real-Time Queue Engine',

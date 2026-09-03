@@ -1,8 +1,8 @@
-import { dualModeStore } from '../utils/dualModeStore.js';
+import { repository as dualModeStore } from '../repositories/index.js';
 import { TOKEN_STATUS, CROPS_CONFIG } from '../config/constants.js';
 
 export const qualityController = {
-  submitInspection: (req, res) => {
+  submitInspection: async (req, res) => {
     const {
       tokenNumber,
       netWeightKg = 520,
@@ -13,7 +13,7 @@ export const qualityController = {
       remarks = 'Complies with DoCA Fair Average Quality (FAQ) standards.'
     } = req.body;
 
-    const token = dualModeStore.getToken(tokenNumber);
+    const token = await dualModeStore.getToken(tokenNumber);
     if (!token) return res.status(404).json({ error: 'Token not found' });
 
     const cropConfig = CROPS_CONFIG[token.cropType] || { mspPerQuintal: 2400, moistureThreshold: 12.0 };
@@ -33,7 +33,7 @@ export const qualityController = {
       inspectedAt: new Date().toISOString()
     };
 
-    dualModeStore.qualityInspections.set(tokenNumber, qualityRecord);
+    await dualModeStore.saveQualityInspection(tokenNumber, qualityRecord);
     token.qualityDetails = qualityRecord;
     token.status = TOKEN_STATUS.PROCURED;
 

@@ -1,4 +1,5 @@
 import express from 'express';
+import { getDatabaseStatus } from '../config/database.js';
 import { authController } from '../controllers/authController.js';
 import { centreController } from '../controllers/centreController.js';
 import { slotController } from '../controllers/slotController.js';
@@ -11,7 +12,7 @@ import { analyticsController } from '../controllers/analyticsController.js';
 import { demoController } from '../controllers/demoController.js';
 import { AIInferenceService } from '../services/aiInferenceService.js';
 import { NotificationService } from '../services/notificationService.js';
-import { dualModeStore } from '../utils/dualModeStore.js';
+import { repository as dualModeStore } from '../repositories/index.js';
 import { authMiddleware, authorizeRoles } from '../middleware/authMiddleware.js';
 import { USER_ROLES } from '../config/constants.js';
 
@@ -57,6 +58,15 @@ router.post('/payments/simulate-credit', authMiddleware, authorizeRoles(USER_ROL
 // 9. District / Mandi Analytics
 router.get('/analytics/dashboard', authMiddleware, authorizeRoles(USER_ROLES.DISTRICT_ADMIN, USER_ROLES.CENTRE_ADMIN), analyticsController.getCentreDashboardStats);
 
+router.get('/health', async (req, res) => {
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    services: { ml: 'connected', queue: 'active' },
+    database: getDatabaseStatus()
+  });
+});
+
 // 10. AI Inference Endpoint
 router.post('/ai/predict-eta', async (req, res) => {
   const result = await AIInferenceService.predictWaitingTime(req.body);
@@ -64,16 +74,16 @@ router.post('/ai/predict-eta', async (req, res) => {
 });
 
 // 11. Notifications Hub
-router.get('/notifications/farmer/:farmerId', authMiddleware, authorizeRoles(USER_ROLES.FARMER), (req, res) => {
+router.get('/notifications/farmer/:farmerId', authMiddleware, authorizeRoles(USER_ROLES.FARMER), async (req, res) => {
   // Check if they are requesting their own notifications
   if (req.user.sub !== req.params.farmerId && req.user.role === USER_ROLES.FARMER) {
     return res.status(403).json({ error: 'Cannot view other farmers notifications' });
   }
-  const notifs = dualModeStore.getFarmerNotifications(req.params.farmerId || 'FMR-1002');
+  const notifs = await dualModeStore.getFarmerNotifications(req.params.farmerId || 'FMR-1002');
   return res.json({ success: true, notifications: notifs });
 });
 
-router.post('/notifications/send', authMiddleware, authorizeRoles(USER_ROLES.OFFICER, USER_ROLES.CENTRE_ADMIN, USER_ROLES.SYSTEM_ADMIN), (req, res) => {
+router.post('/notifications/send', authMiddleware, authorizeRoles(USER_ROLES.OFFICER, USER_ROLES.CENTRE_ADMIN, USER_ROLES.SYSTEM_ADMIN), async (req, res) => {
   const { farmerId = 'FMR-1002', title, body, type, channel } = req.body;
   const notifs = NotificationService.sendFarmerNotification(farmerId, { title, body, type, channel });
   return res.json({ success: true, notifications: notifs });

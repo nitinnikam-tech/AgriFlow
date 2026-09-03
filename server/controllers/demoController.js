@@ -1,34 +1,34 @@
-import { dualModeStore } from '../utils/dualModeStore.js';
+import { repository as dualModeStore } from '../repositories/index.js';
 import { QueueIntelligenceService } from '../services/queueIntelligence.js';
 import { SlotOptimizerService } from '../services/slotOptimizer.js';
 import { NotificationService } from '../services/notificationService.js';
 import { CONGESTION_LEVELS, TOKEN_STATUS } from '../config/constants.js';
 
 export const demoController = {
-  getDemoState: (req, res) => {
-    const queueState = QueueIntelligenceService.getCentreQueueState('PC-PUNE-01');
-    const heroToken = dualModeStore.getToken('A-127');
-    const notifications = dualModeStore.getFarmerNotifications('FMR-1002');
+  getDemoState: async (req, res) => {
+    const queueState = await QueueIntelligenceService.getCentreQueueState('PC-PUNE-01');
+    const heroToken = await dualModeStore.getToken('A-127');
+    const notifications = await dualModeStore.getFarmerNotifications('FMR-1002');
 
     return res.json({
       success: true,
-      step: dualModeStore.demoScenarioStep,
-      isSimulatingCongestion: dualModeStore.isSimulatingCongestion,
+      step: (await dualModeStore.getDemoScenarioStep()),
+      isSimulatingCongestion: (await dualModeStore.getIsSimulatingCongestion()),
       queueState,
       heroToken,
       notifications
     });
   },
 
-  advanceStep: (req, res) => {
+  advanceStep: async (req, res) => {
     const { step } = req.body;
-    dualModeStore.demoScenarioStep = Number(step);
+    (await dualModeStore.getDemoScenarioStep()) = Number(step);
 
-    const heroToken = dualModeStore.getToken('A-127');
+    const heroToken = await dualModeStore.getToken('A-127');
 
     switch (Number(step)) {
       case 1:
-        dualModeStore.initSeedData();
+        await dualModeStore.initSeedData();
         break;
       
       case 2:
@@ -40,7 +40,7 @@ export const demoController = {
         break;
 
       case 3:
-        dualModeStore.isSimulatingCongestion = true;
+        await dualModeStore.setIsSimulatingCongestion(true);
         if (heroToken) {
           heroToken.predictedCongestion = CONGESTION_LEVELS.HIGH;
           heroToken.estimatedWaitMin = 46;
@@ -53,11 +53,11 @@ export const demoController = {
         break;
 
       case 4:
-        SlotOptimizerService.applyOptimization('PC-PUNE-01');
+        await SlotOptimizerService.applyOptimization('PC-PUNE-01');
         break;
 
       case 5:
-        const cnt5 = dualModeStore.counters.get('CNT-PUN-05');
+        const cnt5 = await dualModeStore.getCounter('CNT-PUN-05');
         if (cnt5) {
           cnt5.status = 'PROCESSING';
           cnt5.currentToken = 'A-113';
@@ -91,15 +91,15 @@ export const demoController = {
 
     return res.json({
       success: true,
-      currentStep: dualModeStore.demoScenarioStep,
+      currentStep: (await dualModeStore.getDemoScenarioStep()),
       message: `Advanced to Demo Scenario Step ${step}`
     });
   },
 
-  resetDemo: (req, res) => {
-    dualModeStore.initSeedData();
-    dualModeStore.demoScenarioStep = 0;
-    dualModeStore.isSimulatingCongestion = false;
+  resetDemo: async (req, res) => {
+    await dualModeStore.initSeedData();
+    (await dualModeStore.getDemoScenarioStep()) = 0;
+    await dualModeStore.setIsSimulatingCongestion(false);
     return res.json({
       success: true,
       message: 'Demo state successfully reset to default baseline.'

@@ -1,13 +1,13 @@
-import { dualModeStore } from '../utils/dualModeStore.js';
+import { repository as dualModeStore } from '../repositories/index.js';
 import { TOKEN_STATUS, CONGESTION_LEVELS, CROPS_CONFIG } from '../config/constants.js';
 
 export class QueueIntelligenceService {
-  static getCentreQueueState(centreId = 'PC-PUNE-01') {
-    const centre = dualModeStore.getCentre(centreId);
-    const counters = dualModeStore.getCountersByCentre(centreId);
+  static async getCentreQueueState(centreId = 'PC-PUNE-01') {
+    const centre = await dualModeStore.getCentre(centreId);
+    const counters = await dualModeStore.getCountersByCentre(centreId);
     const activeCounters = counters.filter(c => c.status === 'PROCESSING');
     
-    const allTokens = Array.from(dualModeStore.tokens.values()).filter(t => t.centreId === centreId);
+    const allTokens = Array.from((await dualModeStore.getAllTokens())).filter(t => t.centreId === centreId);
     const waitingTokens = allTokens.filter(t => t.status === TOKEN_STATUS.WAITING)
       .sort((a, b) => a.queuePosition - b.queuePosition);
     const processingTokens = allTokens.filter(t => t.status === TOKEN_STATUS.PROCESSING);
@@ -19,7 +19,7 @@ export class QueueIntelligenceService {
     const queueVelocityPerMin = Number(((activeCounterCount * (1 / avgProcTime))).toFixed(2));
 
     let congestion = CONGESTION_LEVELS.LOW;
-    if (waitingTokens.length > 40 || dualModeStore.isSimulatingCongestion) {
+    if (waitingTokens.length > 40 || (await dualModeStore.getIsSimulatingCongestion())) {
       congestion = CONGESTION_LEVELS.HIGH;
     } else if (waitingTokens.length > 20) {
       congestion = CONGESTION_LEVELS.MEDIUM;
@@ -44,17 +44,17 @@ export class QueueIntelligenceService {
     };
   }
 
-  static calculateFarmerETA(tokenNumber, centreId = 'PC-PUNE-01') {
-    const token = dualModeStore.getToken(tokenNumber);
+  static async calculateFarmerETA(tokenNumber, centreId = 'PC-PUNE-01') {
+    const token = await dualModeStore.getToken(tokenNumber);
     if (!token) return null;
 
-    const queueState = this.getCentreQueueState(centreId);
+    const queueState = await this.getCentreQueueState(centreId);
     const activeCounters = Math.max(1, queueState.activeCountersCount);
     const avgProcTime = queueState.avgProcessingTimeMin;
 
     let peopleAhead = 0;
     if (token.status === TOKEN_STATUS.WAITING) {
-      const allWaiting = Array.from(dualModeStore.tokens.values())
+      const allWaiting = Array.from((await dualModeStore.getAllTokens()))
         .filter(t => t.centreId === centreId && t.status === TOKEN_STATUS.WAITING)
         .sort((a, b) => a.queuePosition - b.queuePosition);
       

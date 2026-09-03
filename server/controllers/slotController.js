@@ -1,22 +1,22 @@
-import { dualModeStore } from '../utils/dualModeStore.js';
+import { repository as dualModeStore } from '../repositories/index.js';
 import { SlotOptimizerService } from '../services/slotOptimizer.js';
 
 export const slotController = {
-  getSlots: (req, res) => {
+  getSlots: async (req, res) => {
     const { centreId = 'PC-PUNE-01' } = req.query;
-    const slots = dualModeStore.getSlotsByCentre(centreId);
+    const slots = await dualModeStore.getSlotsByCentre(centreId);
     return res.json({ success: true, slots });
   },
 
-  getOptimizationProposal: (req, res) => {
+  getOptimizationProposal: async (req, res) => {
     const { centreId = 'PC-PUNE-01' } = req.query;
     const proposal = SlotOptimizerService.getOptimizationProposal(centreId);
     return res.json({ success: true, proposal });
   },
 
-  applyOptimization: (req, res) => {
+  applyOptimization: async (req, res) => {
     const { centreId = 'PC-PUNE-01' } = req.body;
-    const result = SlotOptimizerService.applyOptimization(centreId);
+    const result = await SlotOptimizerService.applyOptimization(centreId);
     return res.json(result);
   }
 };
