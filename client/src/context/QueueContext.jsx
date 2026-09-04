@@ -2,10 +2,12 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { getSocket } from '../services/socket';
 import { api } from '../services/api';
 import { soundAlerts } from '../utils/soundEffects';
+import { useAuth } from './AuthContext';
 
 const QueueContext = createContext();
 
 export function QueueProvider({ children }) {
+  const { token, user } = useAuth();
   const [centreId, setCentreId] = useState('PC-PUNE-01');
   const [targetTokenNumber, setTargetTokenNumber] = useState('A-127');
   const [queueState, setQueueState] = useState(null);
@@ -21,25 +23,39 @@ export function QueueProvider({ children }) {
   // Initial Fetch & Socket Listeners
   const refreshData = useCallback(async () => {
     try {
-      const [queueRes, tokenRes, notifRes] = await Promise.all([
-        api.getLiveQueue(centreId),
-        api.getToken(targetTokenNumber),
-        api.getFarmerNotifications('FMR-1002')
-      ]);
-
+      // Live queue is public
+      const queueRes = await api.getLiveQueue(centreId);
       if (queueRes.success) setQueueState(queueRes);
-      if (tokenRes.success) {
-        setHeroToken(tokenRes.token);
-        setFarmerETA(tokenRes.eta);
+
+      // Only fetch protected data if authenticated
+      if (token) {
+        const [tokenRes, notifRes] = await Promise.all([
+          api.getToken(targetTokenNumber).catch(() => ({ success: false })),
+          api.getFarmerNotifications('FMR-1002').catch(() => ({ success: false }))
+        ]);
+
+        if (tokenRes.success) {
+          setHeroToken(tokenRes.token);
+          setFarmerETA(tokenRes.eta);
+        }
+        if (notifRes.success) setNotifications(notifRes.notifications);
       }
-      if (notifRes.success) setNotifications(notifRes.notifications);
     } catch (err) {
       console.error('Error fetching initial queue state:', err);
     }
-  }, [centreId, targetTokenNumber]);
+  }, [centreId, targetTokenNumber, token]);
 
   useEffect(() => {
     refreshData();
+
+    // Only establish socket connection for authenticated users OR if specifically needed.
+    // The demo might need it, but socket connects with auth token.
+    if (!token) {
+       // Clear protected state
+       setHeroToken(null);
+       setNotifications([]);
+       return;
+    }
 
     const socket = getSocket();
 
@@ -92,7 +108,7 @@ export function QueueProvider({ children }) {
       socket.off('token:update');
       socket.off('global:telemetry');
     };
-  }, [centreId, targetTokenNumber, audioEnabled, refreshData]);
+  }, [centreId, targetTokenNumber, audioEnabled, refreshData, token]);
 
   // Actions
   const callNext = (counterId = 'CNT-PUN-01') => {

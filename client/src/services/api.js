@@ -16,7 +16,9 @@ const apiFetch = async (url, options = {}) => {
   
   if (response.status === 401) {
     localStorage.removeItem('agriflow_jwt');
-    window.location.href = '/login';
+    if (window.location.pathname !== '/login') {
+      window.location.href = '/login';
+    }
     throw new Error('Session expired. Please login again.');
   }
 
