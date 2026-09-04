@@ -2,7 +2,7 @@ import { repository as dualModeStore } from '../repositories/index.js';
 import { QueueIntelligenceService } from '../services/queueIntelligence.js';
 import { TOKEN_STATUS, CONGESTION_LEVELS } from '../config/constants.js';
 import { broadcastCentreAndFarmerUpdates } from '../socket/socketHandler.js';
-import { NotificationService } from '../services/NotificationService.js';
+import { NotificationService } from '../services/notificationService.js';
 
 export const tokenController = {
   getTokenByNumber: async (req, res) => {
