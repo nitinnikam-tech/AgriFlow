@@ -8,6 +8,8 @@ import apiRoutes from './routes/apiRoutes.js';
 import { setupSocketHandlers } from './socket/socketHandler.js';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import { connectMongoDB } from './config/database.js';
+import { repository } from './repositories/index.js';
 
 dotenv.config();
 
@@ -28,6 +30,9 @@ const io = new Server(server, {
   }
 });
 app.set('io', io);
+
+// Trust proxy for rate limiting behind load balancers/reverse proxies
+app.set('trust proxy', 1);
 
 // Security Headers
 app.use(helmet());
@@ -66,12 +71,20 @@ app.get('/health', async (req, res) => {
 
 setupSocketHandlers(io);
 
-server.listen(PORT, () => {
-  console.log('====================================================');
-  console.log(`🌾 AgriFlow Server running on http://localhost:${PORT}`);
-  console.log(`⚡ Real-Time Socket.IO initialized on port ${PORT}`);
-  console.log(`📊 Mode: SIH 2026 Competition Prototype Dual-Mode`);
-  console.log('====================================================');
-});
+// Initialize DB and start server
+const startServer = async () => {
+  await connectMongoDB();
+  await repository.initSeedData();
+
+  server.listen(PORT, () => {
+    console.log('====================================================');
+    console.log(`?? AgriFlow Server running on port ${PORT}`);
+    console.log(`?? Real-Time Socket.IO initialized on port ${PORT}`);
+    console.log(`??? Mode: SIH 2026 Competition Prototype Dual-Mode`);
+    console.log('====================================================');
+  });
+};
+
+startServer();
 
 export { app, server, io };
