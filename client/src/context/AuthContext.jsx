@@ -6,7 +6,7 @@ const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('agriflow_jwt') || null);
+  const [token, setToken] = useState(sessionStorage.getItem('agriflow_jwt') || null);
   const [loading, setLoading] = useState(true);
   const [activeRole, setActiveRole] = useState(null); 
 
@@ -34,7 +34,7 @@ export function AuthProvider({ children }) {
   }, [token]);
 
   const login = (userData, jwtToken) => {
-    localStorage.setItem('agriflow_jwt', jwtToken);
+    sessionStorage.setItem('agriflow_jwt', jwtToken);
     setToken(jwtToken);
     setUser(userData);
     setActiveRole(userData.role);
@@ -42,7 +42,7 @@ export function AuthProvider({ children }) {
   };
 
   const logout = () => {
-    localStorage.removeItem('agriflow_jwt');
+    sessionStorage.removeItem('agriflow_jwt');
     setToken(null);
     setUser(null);
     setActiveRole(null);
@@ -79,3 +79,4 @@ export function AuthProvider({ children }) {
 }
 
 export const useAuth = () => useContext(AuthContext);
+

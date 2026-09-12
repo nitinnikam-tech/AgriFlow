@@ -4,7 +4,7 @@ let socket = null;
 
 export function getSocket() {
   if (!socket) {
-    const token = localStorage.getItem('agriflow_jwt');
+    const token = sessionStorage.getItem('agriflow_jwt');
     const socketUrl = import.meta.env.VITE_SOCKET_URL || window.location.origin;
     socket = io(socketUrl, {
       transports: ['websocket', 'polling'],
@@ -36,3 +36,4 @@ export function reconnectSocket(newToken) {
     socket.disconnect().connect();
   }
 }
+

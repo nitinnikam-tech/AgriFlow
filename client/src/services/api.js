@@ -2,7 +2,7 @@ const rawUrl = import.meta.env.VITE_API_URL || '';
 const API_BASE = rawUrl.endsWith('/api') ? rawUrl : `${rawUrl.replace(/\/$/, '')}/api`;
 
 const apiFetch = async (url, options = {}) => {
-  const token = localStorage.getItem('agriflow_jwt');
+  const token = sessionStorage.getItem('agriflow_jwt');
   const headers = {
     'Content-Type': 'application/json',
     ...options.headers,
@@ -15,16 +15,14 @@ const apiFetch = async (url, options = {}) => {
   const response = await fetch(url, { ...options, headers });
   
   if (response.status === 401) {
-    localStorage.removeItem('agriflow_jwt');
+    sessionStorage.removeItem('agriflow_jwt');
     if (window.location.pathname !== '/login') {
       window.location.href = '/login';
     }
     throw new Error('Session expired. Please login again.');
   }
 
-  if (response.status === 403) {
-    throw new Error('Insufficient permissions to perform this action.');
-  }
+  if (response.status === 403) { const errData = await response.json().catch(()=>({})); throw new Error(errData.error || 'Insufficient permissions to perform this action.'); }
 
   return response.json();
 };
@@ -81,3 +79,5 @@ export const api = {
   dismissAIRecommendation: (id) => apiFetch(`${API_BASE}/ai/recommendations/${id}/dismiss`, { method: 'POST' }),
   getModelHealth: () => apiFetch(`${API_BASE}/ai/health`)
 };
+
+
