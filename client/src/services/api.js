@@ -31,7 +31,7 @@ export const api = {
   // Auth
   sendOtp: (phone) => apiFetch(`${API_BASE}/auth/otp/send`, { method: 'POST', body: JSON.stringify({ phone }) }),
   verifyOtp: (phone, otp) => apiFetch(`${API_BASE}/auth/otp/verify`, { method: 'POST', body: JSON.stringify({ phone, otp }) }),
-  getProfile: () => apiFetch(API_BASE + '/auth/profile'),
+  getProfile: () => apiFetch(API_BASE + '/auth/profile', { cache: 'no-store' }),
   officialLogin: (email, password, role) => apiFetch(`${API_BASE}/auth/official/login`, { method: 'POST', body: JSON.stringify({ email, password, role }) }),
 
   // Centres
@@ -80,6 +80,7 @@ export const api = {
   dismissAIRecommendation: (id) => apiFetch(`${API_BASE}/ai/recommendations/${id}/dismiss`, { method: 'POST' }),
   getModelHealth: () => apiFetch(`${API_BASE}/ai/health`)
 };
+
 
 
 

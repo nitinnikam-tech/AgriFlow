@@ -2,7 +2,7 @@ import { repository as dualModeStore } from '../repositories/index.js';
 import { QueueIntelligenceService } from '../services/queueIntelligence.js';
 import { SlotOptimizerService } from '../services/slotOptimizer.js';
 import { NotificationService } from '../services/notificationService.js';
-import { TOKEN_STATUS, CONGESTION_LEVELS } from '../config/constants.js';
+import { TOKEN_STATUS, CONGESTION_LEVELS, USER_ROLES } from '../config/constants.js';
 import jwt from 'jsonwebtoken';
 
 export function setupSocketHandlers(io) {
@@ -59,7 +59,7 @@ export function setupSocketHandlers(io) {
 
       if (allWaiting.length > 0) {
         const nextToken = allWaiting[0];
-        nextToken.status = TOKEN_STATUS.PROCESSING;
+        nextToken.status = TOKEN_STATUS.PROCESSING; console.log('WAITING LENGTH NOW:', allWaiting.length - 1);
         nextToken.counterId = counterId;
         counter.status = 'PROCESSING';
         counter.currentToken = nextToken.tokenNumber;
@@ -218,3 +218,4 @@ export async function broadcastCentreAndFarmerUpdates(io, centreId = 'PC-PUNE-01
   }
   io.emit('global:telemetry', { queueState });
 }
+

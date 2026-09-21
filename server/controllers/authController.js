@@ -102,7 +102,7 @@ export const authController = {
     if (req.user.role === USER_ROLES.FARMER) {
       const farmer = await dualModeStore.getFarmer(req.user.sub);
       if (!farmer) return res.status(404).json({ error: 'User not found' });
-      return res.json({ success: true, user: farmer });
+      return res.json({ success: true, user: { ...farmer, role: USER_ROLES.FARMER } });
     } else {
       let foundUser = null;
       for (const user of (await dualModeStore.getAllUsers())) {
