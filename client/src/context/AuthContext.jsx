@@ -14,11 +14,8 @@ export function AuthProvider({ children }) {
     const initAuth = async () => {
       if (token) {
         try {
-          const res = await fetch('/api/auth/profile', {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          if (res.ok) {
-            const data = await res.json();
+          const data = await api.getProfile();
+          if (data && data.user) {
             setUser(data.user);
             setActiveRole(data.user.role);
           } else {
@@ -79,4 +76,5 @@ export function AuthProvider({ children }) {
 }
 
 export const useAuth = () => useContext(AuthContext);
+
 
