@@ -53,12 +53,10 @@ export function setupSocketHandlers(io) {
       const counter = await dualModeStore.getCounter(counterId);
       if (!counter) return;
 
-      const allWaiting = Array.from((await dualModeStore.getAllTokens()))
-        .filter(t => t.centreId === centreId && t.status === TOKEN_STATUS.WAITING)
-        .sort((a, b) => a.queuePosition - b.queuePosition);
+      const canonicalQueue = await QueueIntelligenceService.getCanonicalQueue(centreId);
+        const nextToken = canonicalQueue.find(t => t.status === TOKEN_STATUS.WAITING);
 
-      if (allWaiting.length > 0) {
-        const nextToken = allWaiting[0];
+        if (nextToken) {
         nextToken.status = TOKEN_STATUS.PROCESSING; console.log('WAITING LENGTH NOW:', allWaiting.length - 1);
         nextToken.counterId = counterId;
         counter.status = 'PROCESSING';
@@ -218,4 +216,5 @@ export async function broadcastCentreAndFarmerUpdates(io, centreId = 'PC-PUNE-01
   }
   io.emit('global:telemetry', { queueState });
 }
+
 

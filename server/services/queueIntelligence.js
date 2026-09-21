@@ -2,14 +2,19 @@ import { repository as dualModeStore } from '../repositories/index.js';
 import { TOKEN_STATUS, CONGESTION_LEVELS, CROPS_CONFIG } from '../config/constants.js';
 
 export class QueueIntelligenceService {
+    static async getCanonicalQueue(centreId) {
+    return Array.from((await dualModeStore.getAllTokens()))
+      .filter(t => t.centreId === centreId && (t.status === TOKEN_STATUS.WAITING || t.status === TOKEN_STATUS.BOOKED))
+      .sort((a, b) => a.queuePosition - b.queuePosition);
+  }
+
   static async getCentreQueueState(centreId = 'PC-PUNE-01') {
     const centre = await dualModeStore.getCentre(centreId);
     const counters = await dualModeStore.getCountersByCentre(centreId);
     const activeCounters = counters.filter(c => c.status === 'PROCESSING');
     
     const allTokens = Array.from((await dualModeStore.getAllTokens())).filter(t => t.centreId === centreId);
-    const waitingTokens = allTokens.filter(t => t.status === TOKEN_STATUS.WAITING)
-      .sort((a, b) => a.queuePosition - b.queuePosition);
+    const waitingTokens = await this.getCanonicalQueue(centreId);
     const processingTokens = allTokens.filter(t => t.status === TOKEN_STATUS.PROCESSING);
     const completedToday = allTokens.filter(t => t.status === TOKEN_STATUS.COMPLETED || t.status === TOKEN_STATUS.PROCURED);
 
@@ -39,7 +44,7 @@ export class QueueIntelligenceService {
       currentCongestion: congestion,
       activeCounters: counters,
       processingTokens,
-      waitingTokens: waitingTokens.slice(0, 15),
+      waitingTokens,
       lastUpdated: new Date().toISOString()
     };
   }
@@ -54,12 +59,9 @@ export class QueueIntelligenceService {
 
     let peopleAhead = 0;
     if (token.status === TOKEN_STATUS.WAITING || token.status === TOKEN_STATUS.BOOKED) {
-      // Find all waiting tokens that have a queue position ahead of this token
-      const allWaiting = Array.from((await dualModeStore.getAllTokens()))
-        .filter(t => t.centreId === centreId && t.status === TOKEN_STATUS.WAITING);
-      
-      const waitingAhead = allWaiting.filter(t => t.queuePosition < token.queuePosition).length;
-      peopleAhead = waitingAhead + queueState.processingCount;
+      const canonicalQueue = await this.getCanonicalQueue(centreId);
+        const index = canonicalQueue.findIndex(t => t.tokenNumber === token.tokenNumber);
+        peopleAhead = index >= 0 ? index : 0;
     } else if (token.status === TOKEN_STATUS.PROCESSING) {
       peopleAhead = 0;
     }
@@ -142,3 +144,7 @@ export class QueueIntelligenceService {
     };
   }
 }
+
+
+
+
