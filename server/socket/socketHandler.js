@@ -54,7 +54,7 @@ export function setupSocketHandlers(io) {
       if (!counter) return;
 
       const canonicalQueue = await QueueIntelligenceService.getCanonicalQueue(centreId);
-        const nextToken = canonicalQueue.find(t => t.status === TOKEN_STATUS.WAITING);
+        const nextToken = canonicalQueue.find(t => t.status === TOKEN_STATUS.WAITING || t.status === TOKEN_STATUS.BOOKED);
 
         if (nextToken) {
         nextToken.status = TOKEN_STATUS.PROCESSING;
@@ -216,6 +216,8 @@ export async function broadcastCentreAndFarmerUpdates(io, centreId = 'PC-PUNE-01
   }
   io.emit('global:telemetry', { queueState });
 }
+
+
 
 
 
