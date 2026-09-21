@@ -25,6 +25,20 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [err, setErr] = useState("");
+  const [resetState, setResetState] = useState("idle");
+
+  const handleResetDemo = async () => {
+    setResetState("resetting");
+    try {
+      await api.resetDemo();
+      setResetState("ready");
+      setTimeout(() => setResetState("idle"), 3000);
+    } catch (error) {
+      console.error(error);
+      setResetState("error");
+      setTimeout(() => setResetState("idle"), 3000);
+    }
+  };
 
   const selectRole = (r) => { 
     setRole(r); 
@@ -129,7 +143,18 @@ export default function LoginPage() {
                 );
               })}
             </div>
-            <p className="text-center text-white/25 text-xs mt-6">SIH 2026 Demo · PS 26032</p>
+                        <div className="text-center mt-6">
+              <button 
+                onClick={handleResetDemo}
+                disabled={resetState === "resetting"}
+                className="text-white/25 hover:text-white text-xs cursor-pointer focus:outline-none transition-colors"
+              >
+                {resetState === "idle" && "SIH 2026 Demo | PS 26032 (Initialize Fresh Demo)"}
+                {resetState === "resetting" && "Initializing Demo State..."}
+                {resetState === "ready" && "✅ Demo Ready!"}
+                {resetState === "error" && "❌ Failed to initialize demo"}
+              </button>
+            </div>
           </div>
         )}
 

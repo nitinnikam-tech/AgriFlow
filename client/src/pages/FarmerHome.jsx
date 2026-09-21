@@ -86,7 +86,7 @@ export default function FarmerHome() {
                 </div>
                 <div className="bg-white/60 p-4 rounded-2xl border border-emerald-100">
                   <span className="text-xs font-semibold text-emerald-800 uppercase tracking-wider">Procurement Rate</span>
-                  <p className="text-lg font-bold mt-1">?{heroToken?.paymentDetails?.ratePerQuintal || 'N/A'}/q</p>
+                  <p className="text-lg font-bold mt-1">&#8377;{heroToken?.paymentDetails?.ratePerQuintal || 'N/A'}/q</p>
                 </div>
               </div>
 
@@ -94,7 +94,7 @@ export default function FarmerHome() {
                 <div>
                   <span className="text-xs font-semibold text-emerald-800 uppercase tracking-wider">Estimated Amount</span>
                   <p className="text-2xl font-black mt-1 text-emerald-600">
-                    ?{heroToken?.paymentDetails?.estimatedAmountInr ? heroToken.paymentDetails.estimatedAmountInr.toLocaleString('en-IN') : 'N/A'}
+                    &#8377;{heroToken?.paymentDetails?.estimatedAmountInr ? heroToken.paymentDetails.estimatedAmountInr.toLocaleString('en-IN') : 'N/A'}
                   </p>
                 </div>
                 <div className="text-right flex flex-col items-end justify-center">
