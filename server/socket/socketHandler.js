@@ -57,7 +57,7 @@ export function setupSocketHandlers(io) {
         const nextToken = canonicalQueue.find(t => t.status === TOKEN_STATUS.WAITING);
 
         if (nextToken) {
-        nextToken.status = TOKEN_STATUS.PROCESSING; console.log('WAITING LENGTH NOW:', allWaiting.length - 1);
+        nextToken.status = TOKEN_STATUS.PROCESSING;
         nextToken.counterId = counterId;
         counter.status = 'PROCESSING';
         counter.currentToken = nextToken.tokenNumber;
@@ -216,5 +216,6 @@ export async function broadcastCentreAndFarmerUpdates(io, centreId = 'PC-PUNE-01
   }
   io.emit('global:telemetry', { queueState });
 }
+
 
 
