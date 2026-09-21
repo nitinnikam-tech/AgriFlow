@@ -28,7 +28,8 @@ export default function OfficerDashboard() {
     { id: 'CNT-PUN-05', counterNumber: 5, officerName: 'Anil Jadhav', status: 'STANDBY', currentToken: null, currentCrop: null, tokensProcessedToday: 0, avgProcessingTimeMin: 5.5, utilizationPercent: 0 }
   ];
 
-  const handleOpenQualityModal = (tok) => {
+  const handleOpenQualityModal = (counterId, tok) => {
+    setSelectedCounter(counterId);
     setTokenToInspect(tok || 'A-109');
     setIsQualityModalOpen(true);
   };
@@ -173,7 +174,7 @@ export default function OfficerDashboard() {
                     {isProcessing ? (
                       <>
                         <button
-                          onClick={() => handleOpenQualityModal(c.currentToken)}
+                          onClick={() => handleOpenQualityModal(c.id, c.currentToken)}
                           className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2 px-3 rounded-xl transition-colors flex items-center justify-center space-x-1"
                         >
                           <Scale className="w-3.5 h-3.5 mr-1" />
@@ -347,3 +348,4 @@ export default function OfficerDashboard() {
     </div>
   );
 }
+
