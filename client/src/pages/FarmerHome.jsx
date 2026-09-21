@@ -6,11 +6,12 @@ import SmartTokenCard from '../components/SmartTokenCard';
 import SmartSlotBookingModal from '../components/SmartSlotBookingModal';
 import ProcurementTimeline from '../components/ProcurementTimeline';
 import PaymentTrackerCard from '../components/PaymentTrackerCard';
-import { Bell, MapPin, Sparkles, AlertCircle, PhoneCall, HelpCircle } from 'lucide-react';
+import { Bell, MapPin, Sparkles, AlertCircle, PhoneCall, HelpCircle, CheckCircle2 } from 'lucide-react';
 
 export default function FarmerHome() {
   const { t } = useLanguage();
-  const { notifications } = useQueue();
+  const { heroToken, notifications } = useQueue();
+  const isCompleted = ['COMPLETED', 'PROCURED', 'PAYMENT_COMPLETED'].includes(heroToken?.status);
   const [isSlotModalOpen, setIsSlotModalOpen] = useState(false);
   const [showNotifDrawer, setShowNotifDrawer] = useState(false);
 
@@ -46,15 +47,78 @@ export default function FarmerHome() {
 
       {/* Main Content Area */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 space-y-8">
-        {/* 1. Visually Dominant LIVE QUEUE RADAR (The core of AgriFlow) */}
-        <section>
-          <LiveQueueRadar />
-        </section>
+        {isCompleted ? (
+          <section>
+            <div className="bg-emerald-50 rounded-3xl border border-emerald-200/90 shadow-sm p-6 sm:p-7 text-emerald-900">
+              <div className="flex items-center justify-between pb-4 border-b border-emerald-200/60">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center">
+                    <CheckCircle2 className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h2 className="font-extrabold text-xl tracking-tight">PROCUREMENT COMPLETED</h2>
+                    <p className="text-xs text-emerald-700/80 font-medium">Digital Receipt & Summary</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">{t('token')}</div>
+                  <div className="text-xl sm:text-2xl font-black tracking-tight">{heroToken?.tokenNumber || 'N/A'}</div>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                <div className="bg-white/60 p-4 rounded-2xl border border-emerald-100">
+                  <span className="text-xs font-semibold text-emerald-800 uppercase tracking-wider">Crop</span>
+                  <p className="text-lg font-bold mt-1">{heroToken?.cropType || 'N/A'}</p>
+                </div>
+                <div className="bg-white/60 p-4 rounded-2xl border border-emerald-100">
+                  <span className="text-xs font-semibold text-emerald-800 uppercase tracking-wider">Net Weight</span>
+                  <p className="text-lg font-bold mt-1">{heroToken?.qualityDetails?.netWeightKg || 'N/A'} kg</p>
+                </div>
+                <div className="bg-white/60 p-4 rounded-2xl border border-emerald-100">
+                  <span className="text-xs font-semibold text-emerald-800 uppercase tracking-wider">Quality Grade</span>
+                  <p className="text-lg font-bold mt-1 flex items-center gap-2">
+                    {heroToken?.qualityDetails?.grade || 'N/A'}
+                    {heroToken?.qualityDetails?.moisturePercent && (
+                      <span className="text-xs font-medium px-2 py-0.5 bg-emerald-100 rounded-lg">{heroToken.qualityDetails.moisturePercent}% Moisture</span>
+                    )}
+                  </p>
+                </div>
+                <div className="bg-white/60 p-4 rounded-2xl border border-emerald-100">
+                  <span className="text-xs font-semibold text-emerald-800 uppercase tracking-wider">Procurement Rate</span>
+                  <p className="text-lg font-bold mt-1">?{heroToken?.paymentDetails?.ratePerQuintal || 'N/A'}/q</p>
+                </div>
+              </div>
 
-        {/* 2. Farmer Smart Pass */}
-        <section>
-          <SmartTokenCard onOpenSlotBooking={() => setIsSlotModalOpen(true)} />
-        </section>
+              <div className="mt-4 bg-white/60 p-4 rounded-2xl border border-emerald-100 flex items-center justify-between">
+                <div>
+                  <span className="text-xs font-semibold text-emerald-800 uppercase tracking-wider">Estimated Amount</span>
+                  <p className="text-2xl font-black mt-1 text-emerald-600">
+                    ?{heroToken?.paymentDetails?.estimatedAmountInr ? heroToken.paymentDetails.estimatedAmountInr.toLocaleString('en-IN') : 'N/A'}
+                  </p>
+                </div>
+                <div className="text-right flex flex-col items-end justify-center">
+                  <span className="text-xs font-semibold text-emerald-800 uppercase tracking-wider">Completion Time</span>
+                  <p className="text-sm font-bold mt-1 text-emerald-700">
+                    {heroToken?.completedAt ? new Date(heroToken.completedAt).toLocaleString() : 'N/A'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+        ) : (
+          <>
+            {/* 1. Visually Dominant LIVE QUEUE RADAR (The core of AgriFlow) */}
+            <section>
+              <LiveQueueRadar />
+            </section>
+
+            {/* 2. Farmer Smart Pass */}
+            <section>
+              <SmartTokenCard onOpenSlotBooking={() => setIsSlotModalOpen(true)} />
+            </section>
+          </>
+        )}
 
         {/* 3. Procurement Lifecycle Timeline */}
         <section>
@@ -140,3 +204,4 @@ export default function FarmerHome() {
     </div>
   );
 }
+
