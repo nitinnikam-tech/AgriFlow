@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 import { useQueue } from '../context/QueueContext';
 import LiveQueueRadar from '../components/LiveQueueRadar';
 import SmartTokenCard from '../components/SmartTokenCard';
@@ -11,6 +12,8 @@ import { Bell, MapPin, Sparkles, AlertCircle, PhoneCall, HelpCircle, CheckCircle
 export default function FarmerHome() {
   const { t } = useLanguage();
   const { heroToken, notifications } = useQueue();
+  const { user } = useAuth();
+  const [hasBooked, setHasBooked] = useState(sessionStorage.getItem('demo_slot_booked') === 'true');
   const isCompleted = ['COMPLETED', 'PROCURED', 'PAYMENT_COMPLETED'].includes(heroToken?.status);
   const [isSlotModalOpen, setIsSlotModalOpen] = useState(false);
   const [showNotifDrawer, setShowNotifDrawer] = useState(false);
@@ -23,9 +26,9 @@ export default function FarmerHome() {
           <div>
             <span className="text-xs font-semibold text-agri-700 uppercase tracking-wider">DoCA Smart Mandi Portal</span>
             <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-              {t('helloFarmer')}
+              {t('helloFarmer')}, {user?.name || 'Ramesh Patil'}
             </h1>
-            <p className="text-xs text-slate-500 mt-0.5">Ramesh Patil • Haveli, Pune District</p>
+            <p className="text-xs text-slate-500 mt-0.5">{user?.village || 'Khed Shivapur'}, {user?.district || 'Pune'} District, {user?.state || 'Maharashtra'}</p>
           </div>
 
           <div className="flex items-center space-x-3">

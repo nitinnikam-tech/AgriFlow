@@ -85,8 +85,10 @@ export default function LiveQueueRadar() {
         {/* Token Badge */}
         <div className="bg-slate-800/90 border border-slate-600/60 rounded-2xl px-4 py-2 flex items-center space-x-3 shadow-inner">
           <div className="text-right">
-            <div className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">{t('token')}</div>
-            <div className="text-xl sm:text-2xl font-black text-amber-400 tracking-tight">A-127</div>
+            <div className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Currently Processing</div>
+            <div className="text-xl sm:text-2xl font-black text-amber-400 tracking-tight">
+              {queueState?.processingTokens?.[0]?.tokenNumber || 'None'}
+            </div>
           </div>
         </div>
       </div>

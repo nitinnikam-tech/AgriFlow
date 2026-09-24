@@ -3,12 +3,13 @@ import { useLanguage } from '../context/LanguageContext';
 import { useQueue } from '../context/QueueContext';
 import { Calendar, CheckCircle2, Clock, Zap, X, ShieldAlert, AlertTriangle } from 'lucide-react';
 
-export default function SmartSlotBookingModal({ isOpen, onClose }) {
+export default function SmartSlotBookingModal({ isOpen, onClose, onBookingSuccess }) {
   const { t } = useLanguage();
   const { setHeroToken } = useQueue();
   const [selectedSlot, setSelectedSlot] = useState('SLOT-1030');
   const [selectedCrop, setSelectedCrop] = useState('WHEAT');
-  const [quantity, setQuantity] = useState(520);
+  const [quantity, setQuantity] = useState(5.2);
+  const [selectedCentre, setSelectedCentre] = useState('PC-PUNE-01');
   const [isBooked, setIsBooked] = useState(false);
 
   if (!isOpen) return null;
@@ -28,6 +29,7 @@ export default function SmartSlotBookingModal({ isOpen, onClose }) {
     setTimeout(() => {
       setIsBooked(false);
       onClose();
+      if (onBookingSuccess) onBookingSuccess({ crop: selectedCrop, quantity, centre: selectedCentre, slot: selectedSlot });
     }, 1200);
   };
 
@@ -50,6 +52,19 @@ export default function SmartSlotBookingModal({ isOpen, onClose }) {
           </button>
         </div>
 
+        {/* Centre Selection */}
+        <div className="mt-5">
+          <label className="block text-xs font-semibold text-slate-700 mb-1">Choose a Centre</label>
+          <select
+            value={selectedCentre}
+            onChange={(e) => setSelectedCentre(e.target.value)}
+            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800"
+          >
+            <option value="PC-PUNE-01">Pune District APMC Procurement Mandi</option>
+            <option value="PC-NASHIK-02">Nashik Onion & Grain APMC</option>
+          </select>
+        </div>
+
         {/* Crop Selection */}
         <div className="mt-5 grid grid-cols-2 gap-3">
           <div>
@@ -59,7 +74,7 @@ export default function SmartSlotBookingModal({ isOpen, onClose }) {
               onChange={(e) => setSelectedCrop(e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800"
             >
-              <option value="WHEAT">Wheat (गेहूं / गहू) • MSP ₹2,275/q</option>
+              <option value="WHEAT">Wheat (गेहूँ / गहू) • MSP ₹2,275/q</option>
               <option value="SOYBEAN">Soybean (सोयाबीन) • MSP ₹4,600/q</option>
               <option value="CHANA">Gram / Chana (चना) • MSP ₹5,440/q</option>
               <option value="PADDY">Paddy (धान / भात) • MSP ₹2,183/q</option>
@@ -67,16 +82,19 @@ export default function SmartSlotBookingModal({ isOpen, onClose }) {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">{t('quantity')} (kg)</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">{t('quantity')} (Quintal)</label>
             <input
               type="number"
+              step="0.1"
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800"
-              placeholder="e.g. 520"
+              placeholder="e.g. 5.2"
             />
           </div>
         </div>
+
+
 
         {/* AI Recommended Slot Banner */}
         <div className="mt-5 p-4 rounded-2xl bg-gradient-to-r from-emerald-900 to-agri-950 text-white shadow-md border border-emerald-500/40">

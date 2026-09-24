@@ -26,6 +26,10 @@ export default function LoginPage() {
   const [sent, setSent] = useState(false);
   const [err, setErr] = useState("");
   const [resetState, setResetState] = useState("idle");
+  const [farmerName, setFarmerName] = useState("Ramesh Patil");
+  const [village, setVillage] = useState("Khed Shivapur");
+  const [district, setDistrict] = useState("Pune");
+  const [stateName, setStateName] = useState("Maharashtra");
 
   const handleResetDemo = async () => {
     setResetState("resetting");
@@ -70,7 +74,7 @@ export default function LoginPage() {
     if (otp.length !== 6) { setErr("Enter the 6-digit OTP"); return; }
     setLoading(true); setErr("");
     try {
-      const res = await api.verifyOtp(phone, otp);
+      const res = await api.verifyOtp(phone, otp, farmerName, village, district, stateName);
       if (res.success) {
         login(res.user, res.token);
         setStep("success");

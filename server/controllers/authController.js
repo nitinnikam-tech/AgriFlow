@@ -36,20 +36,29 @@ export const authController = {
   },
 
   verifyOtp: async (req, res) => {
-    const { phone, otp } = req.body;
+    const { phone, otp, name, village, district, state } = req.body;
     if (otp !== '123456' && otp !== '2026') {
       return res.status(401).json({ error: 'Invalid OTP. For demo mode, please use 123456.' });
     }
 
     // Return hero farmer profile (Ramesh Patil)
-    const farmer = await dualModeStore.getFarmer('FMR-1002') || {
-      id: 'FMR-1002',
-      name: 'Ramesh Patil',
-      phone: phone || '9876543210',
-      village: 'Khed Shivapur',
-      district: 'Pune',
-      state: 'Maharashtra'
-    };
+    let farmer = await dualModeStore.getFarmer('FMR-1002');
+    if (!farmer) {
+      farmer = {
+        id: 'FMR-1002',
+        name: name || 'Ramesh Patil',
+        phone: phone || '9876543210',
+        village: village || 'Khed Shivapur',
+        district: district || 'Pune',
+        state: state || 'Maharashtra'
+      };
+    } else {
+      if (name) farmer.name = name;
+      if (phone) farmer.phone = phone;
+      if (village) farmer.village = village;
+      if (district) farmer.district = district;
+      if (state) farmer.state = state;
+    }
     
     const user = { ...farmer, role: USER_ROLES.FARMER };
     const token = generateToken(user);

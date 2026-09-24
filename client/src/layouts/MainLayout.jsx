@@ -15,7 +15,7 @@ export default function MainLayout({ children }) {
       </div>
 
       {/* Floating SIH Demo Bar (Shown on all pages except full hero pitch) */}
-      {!isHeroDemoPage && <DemoControllerBar />}
+      
 
       {/* Footer */}
       <footer className="bg-white border-t border-slate-200 py-6 px-4 text-center text-xs text-slate-500">
