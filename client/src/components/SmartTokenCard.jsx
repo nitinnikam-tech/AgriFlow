@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useQueue } from '../context/QueueContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 import { QrCode, MapPin, CheckCircle2, Shield, Download, Smartphone, Share2, AlertCircle } from 'lucide-react';
 
 export default function SmartTokenCard({ onOpenSlotBooking }) {
   const { heroToken } = useQueue();
+  const { user } = useAuth();
   const { t } = useLanguage();
   const [showQrModal, setShowQrModal] = useState(false);
   
@@ -59,7 +61,7 @@ export default function SmartTokenCard({ onOpenSlotBooking }) {
             <div className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
               {heroToken?.tokenNumber || 'A-127'}
             </div>
-            <p className="text-xs text-slate-600 mt-0.5">{heroToken?.farmerName || 'Ramesh Patil'} • {heroToken?.farmerPhone || '9876543210'}</p>
+            <p className="text-xs text-slate-600 mt-0.5">{user?.name || heroToken?.farmerName || 'Ramesh Patil'} • {user?.phone || heroToken?.farmerPhone || '9876543210'}</p>
           </div>
 
           {/* QR Thumbnail */}
