@@ -169,8 +169,15 @@ export default function LoginPage() {
               ← Back
             </button>
             <h2 className="text-white font-semibold text-lg mb-1">Login as {role.label}</h2>
-            <p className="text-white/40 text-sm mb-5">Enter your registered mobile number</p>
+            <p className="text-white/40 text-sm mb-5">Enter your details to login</p>
             <div className="space-y-4">
+              <div>
+                <label className="text-white/50 text-xs font-medium mb-1.5 block">Farmer Name</label>
+                <input type="text" value={farmerName}
+                  onChange={e => setFarmerName(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm placeholder-white/20 focus:outline-none focus:border-agri-500/50"
+                  placeholder="Enter farmer name" />
+              </div>
               <div>
                 <label className="text-white/50 text-xs font-medium mb-1.5 block">Mobile Number</label>
                 <div className="flex gap-2">
@@ -180,6 +187,29 @@ export default function LoginPage() {
                     className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm placeholder-white/20 focus:outline-none focus:border-agri-500/50"
                     placeholder="9876543210" />
                 </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-white/50 text-xs font-medium mb-1.5 block">Village</label>
+                  <input type="text" value={village}
+                    onChange={e => setVillage(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm placeholder-white/20 focus:outline-none focus:border-agri-500/50"
+                    placeholder="Enter village" />
+                </div>
+                <div>
+                  <label className="text-white/50 text-xs font-medium mb-1.5 block">District</label>
+                  <input type="text" value={district}
+                    onChange={e => setDistrict(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm placeholder-white/20 focus:outline-none focus:border-agri-500/50"
+                    placeholder="Enter district" />
+                </div>
+              </div>
+              <div>
+                <label className="text-white/50 text-xs font-medium mb-1.5 block">State</label>
+                <input type="text" value={stateName}
+                  onChange={e => setStateName(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm placeholder-white/20 focus:outline-none focus:border-agri-500/50"
+                  placeholder="Enter state" />
               </div>
 
               {!sent ? (
