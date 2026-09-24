@@ -1,70 +1,23 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { useQueue } from '../context/QueueContext';
-import { useLanguage } from '../context/LanguageContext';
-import { Clock, Users, Zap, ShieldCheck, AlertCircle, Compass, ArrowDown, ArrowUp } from 'lucide-react';
+const fs = require('fs');
 
-export default function LiveQueueRadar() {
-  const { queueState, heroToken, farmerETA } = useQueue();
-  const { t } = useLanguage();
+let content = fs.readFileSync('client/src/components/LiveQueueRadar.jsx', 'utf8');
 
-  const peopleAhead = farmerETA?.peopleAhead !== undefined ? farmerETA.peopleAhead : (heroToken?.peopleAhead || 18);
-  const activeCounters = farmerETA?.activeCounters || heroToken?.activeCounters || 4;
-  const estimatedWaitMin = farmerETA?.estimatedWaitMin !== undefined ? farmerETA.estimatedWaitMin : (heroToken?.estimatedWaitMin || 32);
-  const recommendedArrival = farmerETA?.recommendedArrivalTime || heroToken?.recommendedArrivalTime || '10:42 AM';
-  const congestion = farmerETA?.predictedCongestion || heroToken?.predictedCongestion || 'LOW';
-  
-  // ETA Change tracking
-  const [etaChange, setEtaChange] = useState(0); // negative means improved/dropped, positive means increased
-  const prevEtaRef = useRef(estimatedWaitMin);
-
-  useEffect(() => {
-    if (estimatedWaitMin !== prevEtaRef.current) {
-      setEtaChange(estimatedWaitMin - prevEtaRef.current);
-      prevEtaRef.current = estimatedWaitMin;
-      
-      // clear the change indicator after a few seconds
-      const timeout = setTimeout(() => setEtaChange(0), 4000);
-      return () => clearTimeout(timeout);
-    }
-  }, [estimatedWaitMin]);
-
-  const getCongestionBadge = (level) => {
-    switch (level) {
-      case 'HIGH':
-      case 'CRITICAL':
-        return {
-          bg: 'bg-rose-100 text-rose-800 border-rose-300',
-          dot: 'bg-rose-500',
-          text: 'Very Busy' // Human language
-        };
-      case 'MEDIUM':
-        return {
-          bg: 'bg-amber-100 text-amber-800 border-amber-300',
-          dot: 'bg-amber-500',
-          text: 'Moderately Busy'
-        };
-      default:
-        return {
-          bg: 'bg-emerald-100 text-emerald-800 border-emerald-300',
-          dot: 'bg-emerald-500',
-          text: 'Normal Flow'
-        };
-    }
-  };
-
-  const badge = getCongestionBadge(congestion);
+// Add getClosestProcessingToken
+content = content.replace(
+  /const badge = getCongestionBadge\(congestion\);/,
+  `const badge = getCongestionBadge(congestion);
 
   const getClosestProcessingToken = () => {
     if (!queueState?.processingTokens || queueState.processingTokens.length === 0) return 'None';
     
     // Extract numerical part of hero token (e.g., "A-127" -> 127)
-    const heroTarget = heroToken?.tokenNumber ? parseInt(heroToken.tokenNumber.replace(/\D/g, ''), 10) : 127;
+    const heroTarget = heroToken?.tokenNumber ? parseInt(heroToken.tokenNumber.replace(/\\D/g, ''), 10) : 127;
     
     let closestToken = queueState.processingTokens[0].tokenNumber;
     let minDiff = Infinity;
     
     for (const pt of queueState.processingTokens) {
-      const ptNum = parseInt(pt.tokenNumber.replace(/\D/g, ''), 10);
+      const ptNum = parseInt(pt.tokenNumber.replace(/\\D/g, ''), 10);
       if (!isNaN(ptNum)) {
         const diff = Math.abs(heroTarget - ptNum);
         if (diff < minDiff) {
@@ -74,9 +27,12 @@ export default function LiveQueueRadar() {
       }
     }
     return closestToken;
-  };
+  };`
+);
 
-  return (
+// Replace JSX from return statement downwards
+const jsxStart = content.indexOf('return (');
+const updatedJsx = `return (
     <div className="bg-white rounded-3xl text-slate-800 p-6 sm:p-8 shadow-sm relative overflow-hidden border border-slate-200/90">
       {/* Decorative background glow circles */}
       <div className="absolute -right-16 -top-16 w-64 h-64 bg-agri-100/50 rounded-full blur-3xl pointer-events-none" />
@@ -165,13 +121,13 @@ export default function LiveQueueRadar() {
             
             {/* Visual ETA Change Indicator */}
             {etaChange !== 0 && (
-              <div className={`flex items-center text-xs font-bold px-1.5 py-0.5 rounded animate-bounce ${etaChange < 0 ? 'bg-emerald-500/20 text-emerald-500' : 'bg-rose-100 text-rose-700'}`}>
+              <div className={\`flex items-center text-xs font-bold px-1.5 py-0.5 rounded animate-bounce \${etaChange < 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}\`}>
                 {etaChange < 0 ? <ArrowDown className="w-3 h-3 mr-0.5"/> : <ArrowUp className="w-3 h-3 mr-0.5"/>}
                 {Math.abs(etaChange)}m
               </div>
             )}
           </div>
-          <div className="mt-3 text-[11px] text-agri-700/90 font-semibold flex items-center space-x-1 border-t border-agri-200/70 pt-2 font-medium">
+          <div className="mt-3 text-[11px] text-agri-700/90 flex items-center space-x-1 border-t border-agri-200/70 pt-2 font-semibold">
             <span>Powered by AI Analysis</span>
           </div>
         </div>
@@ -180,15 +136,15 @@ export default function LiveQueueRadar() {
         <div className="bg-slate-50/80 border border-slate-200 hover:border-agri-300 transition-all rounded-2xl p-4 sm:p-5 flex flex-col justify-between backdrop-blur-xs">
           <div className="flex items-center justify-between text-slate-500 mb-2">
             <span className="text-xs font-medium uppercase tracking-wider">{t('recommendedArrival')}</span>
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            <ShieldCheck className="w-4 h-4 text-emerald-500" />
           </div>
           <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
             {recommendedArrival}
           </div>
           <div className="mt-3 flex items-center justify-between border-t border-slate-200/80 pt-2">
             <span className="text-[11px] text-slate-500">Queue Status:</span>
-            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${badge.bg}`}>
-              <span className={`w-1.5 h-1.5 rounded-full mr-1 ${badge.dot}`} />
+            <span className={\`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border \${badge.bg}\`}>
+              <span className={\`w-1.5 h-1.5 rounded-full mr-1 \${badge.dot}\`} />
               {badge.text}
             </span>
           </div>
@@ -202,7 +158,7 @@ export default function LiveQueueRadar() {
             <AlertCircle className="w-4 h-4" />
           </div>
           <p className="text-xs sm:text-sm text-slate-600">
-            <strong className="text-slate-900 font-semibold">Smart Recommendation:</strong> Avoid waiting in the sun. Based on {peopleAhead} farmers ahead of you and {activeCounters} active counters, plan your arrival for <span className="text-agri-700 font-bold">{recommendedArrival}</span>.
+            <strong className="text-slate-900 font-bold">Smart Recommendation:</strong> Avoid waiting in the sun. Based on {peopleAhead} farmers ahead of you and {activeCounters} active counters, plan your arrival for <span className="text-agri-700 font-bold">{recommendedArrival}</span>.
           </p>
         </div>
         <div className="flex items-center space-x-2 shrink-0">
@@ -211,4 +167,9 @@ export default function LiveQueueRadar() {
       </div>
     </div>
   );
-}
+}`;
+
+content = content.substring(0, jsxStart) + updatedJsx;
+
+fs.writeFileSync('client/src/components/LiveQueueRadar.jsx', content);
+console.log('Fixed LiveQueueRadar.jsx');
